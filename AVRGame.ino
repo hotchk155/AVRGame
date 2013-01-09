@@ -13,79 +13,8 @@ Disp8x8Class Disp8x8;
 Tone speaker;
 byte soundOn = 0;
 char nextGame = -1;
-
-void getDigit(byte which, byte side, byte *data)
-{
-    byte d0=0,d1=0,d2=0;
-    switch(which)
-    {
-        case 0: d0=0b01110101; d1=0b01010101; d2=0b01110000; break;
-        case 1: d0=0b00100110; d1=0b00100010; d2=0b01110000; break;
-        case 2: d0=0b01110001; d1=0b01110100; d2=0b01110000; break;
-        case 3: d0=0b01110001; d1=0b00110001; d2=0b01110000; break;
-        case 4: d0=0b01010101; d1=0b01110001; d2=0b00010000; break;
-        case 5: d0=0b01110100; d1=0b01110001; d2=0b01110000; break;
-        case 6: d0=0b01110100; d1=0b01110101; d2=0b01110000; break;
-        case 7: d0=0b01110001; d1=0b00100100; d2=0b01000000; break;
-        case 8: d0=0b01110101; d1=0b01110101; d2=0b01110000; break;
-        case 9: d0=0b01110101; d1=0b01110001; d2=0b00010000; break;
-    }
-    byte o0=(d0>>4)&0x0f;
-    byte o1=(d0)&0x0f;
-    byte o2=(d1>>4)&0x0f;
-    byte o3=(d1)&0x0f;
-    byte o4=(d2>>4)&0x0f;
-    if(!side) {
-      data[0] |= (o0<<=4);
-      data[1] |= (o1<<=4);
-      data[2] |= (o2<<=4);
-      data[3] |= (o3<<=4);
-      data[4] |= (o4<<=4);
-    }
-    else
-    {
-      data[0] |= o0;
-      data[1] |= o1;
-      data[2] |= o2;
-      data[3] |= o3;
-      data[4] |= o4;
-    }
-}
-
-void scrollNumber(unsigned long n, int ofs)
-{
-  unsigned long div = 10000000;
-  byte dest = 0;
-  byte side = 0;
-  byte m[4][5] = {0};
-  while(div>0)
-  {
-    int z = n/div;
-    n=n%div;
-    div/=10;
-    getDigit(z,side,m[dest]);    
-    side=!side;
-    if(!side) dest++;
-  }
-ofs %= 48;
-//  for(int i=0; i<48; ++i)
-//  {
-    Disp8x8.cls();
-    for(int j=0;j<5;++j)
-    {
-      byte b0=0,b1=0;
-      if(ofs>7 && ofs<40) b0=m[(ofs-8)/8][j];
-      if(ofs<32) b1=m[ofs/8][j];
-      byte q=ofs%8;
-      if(ofs&1)
-        Disp8x8.green[j+1] = (b0<<q)|(b1>>(8-q));
-      else
-        Disp8x8.red[j+1] = (b0<<q)|(b1>>(8-q));
-    }
-    //  for(int k=0;k<40;++k)
-      //  Disp8x8.refresh();
-  //}  
-}
+unsigned long gameScore;
+char firstButtonPress = 1;
 
 CGame *pGame = NULL;
 unsigned long timeButtonAPress = 0;
@@ -102,8 +31,6 @@ unsigned int Timer2Period;
 unsigned int Timer3Period;
 unsigned int Timer4Period;
 unsigned int Timer5Period;
-
-
 
 void setNextGame(int which)
 {
@@ -143,6 +70,7 @@ void startGame(int which)
   Timer3Period = 0;
   Timer4Period = 0;
   Timer5Period = 0;
+  gameScore = 0;
   pGame->init();
   pGame->handleEvent(EV_START);
 }
@@ -152,7 +80,6 @@ void initGames()
    byte which = EEPROM.read(EEPROM_GAMESELECTED);
    startGame(which);
 }
-
 
 inline void playSound(int pitch, int dur)
 {
@@ -174,13 +101,100 @@ void initSound()
    soundOn = EEPROM.read(EEPROM_SOUNDON);
 }
 
+void getDigit(byte which, byte side, byte *data)
+{
+    byte d0=0,d1=0,d2=0;
+    switch(which)
+    {
+        case 0: d0=0b01110101; d1=0b01010101; d2=0b01110000; break;
+        case 1: d0=0b00100110; d1=0b00100010; d2=0b01110000; break;
+        case 2: d0=0b01110001; d1=0b01110100; d2=0b01110000; break;
+        case 3: d0=0b01110001; d1=0b00110001; d2=0b01110000; break;
+        case 4: d0=0b01010101; d1=0b01110001; d2=0b00010000; break;
+        case 5: d0=0b01110100; d1=0b01110001; d2=0b01110000; break;
+        case 6: d0=0b01110100; d1=0b01110101; d2=0b01110000; break;
+        case 7: d0=0b01110001; d1=0b00100100; d2=0b01000000; break;
+        case 8: d0=0b01110101; d1=0b01110101; d2=0b01110000; break;
+        case 9: d0=0b01110101; d1=0b01110001; d2=0b00010000; break;
+    }
+    byte o0=(d0>>4)&0x0f;
+    byte o1=(d0)&0x0f;
+    byte o2=(d1>>4)&0x0f;
+    byte o3=(d1)&0x0f;
+    byte o4=(d2>>4)&0x0f;
+    if(!side) {
+      data[0] |= (o0<<=4);
+      data[1] |= (o1<<=4);
+      data[2] |= (o2<<=4);
+      data[3] |= (o3<<=4);
+      data[4] |= (o4<<=4);
+    }
+    else
+    {
+      data[0] |= o0;
+      data[1] |= o1;
+      data[2] |= o2;
+      data[3] |= o3;
+      data[4] |= o4;
+    }
+}
 
+void showScore(unsigned long n)
+{  
+  unsigned long div = 10000000;
+  byte dest = 0;
+  byte side = 0;
+  byte m[4][5] = {0};
+  int j;
+  
+  while(div>0)
+  {
+    int z = n/div;
+    n=n%div;
+    div/=10;
+    getDigit(z,side,m[dest]);    
+    side=!side;
+    if(!side) dest++;
+  }
+  for(int ofs=0; ofs<41; ++ofs)
+  {
+    Disp8x8.cls();
+    for(j=0;j<5;++j)
+    {
+      byte b0=0,b1=0;
+      if(ofs>7 && ofs<40) b0=m[(ofs-8)/8][j];
+      if(ofs<32) b1=m[ofs/8][j];
+      byte q=ofs%8;
+      if(ofs&8)
+        Disp8x8.green[j+1] = (b0<<q)|(b1>>(8-q));
+      else
+        Disp8x8.red[j+1] = (b0<<q)|(b1>>(8-q));
+    }
+    for(j=0;j<50;++j)
+      Disp8x8.refresh();
+  }  
+}
 
-
-
-
-
-
+void endGame() 
+{
+  byte red[8];
+  byte green[8];
+  int j,k;
+  memcpy(red,Disp8x8.red,8);
+  memcpy(green,Disp8x8.green,8);  
+  for(;;)
+  {
+    for(k=0; k<5; ++k)
+    {
+      for(j=0;j<100;++j)
+        Disp8x8.refresh();
+      delay(200);
+    }
+    showScore(gameScore);
+    memcpy(Disp8x8.red,red,8);
+    memcpy(Disp8x8.green,green,8);
+  }
+}
 
 void setup() 
 {  
@@ -220,7 +234,16 @@ unsigned long modePress = 0;
 void loop() {
   byte event = 0;
   unsigned long milliseconds = millis();
-    
+
+  if(firstButtonPress)
+  {
+    if(digitalRead(P_BUTA) == LOW || digitalRead(P_BUTB) == LOW || digitalRead(P_BUTC) == LOW || digitalRead(P_BUTD))
+    { 
+      randomSeed(milliseconds);
+      firstButtonPress = 0;
+    }
+  }
+  
   if(digitalRead(P_BUTA) == LOW && digitalRead(P_BUTC) == LOW) 
   {
     if(!modePress) 

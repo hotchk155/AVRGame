@@ -201,11 +201,14 @@ extern unsigned int Timer2Period;
 extern unsigned int Timer3Period;
 extern unsigned int Timer4Period;
 extern unsigned int Timer5Period;
+extern unsigned long gameScore;
 inline void playSound(int pitch, int dur);
 extern byte isSoundOn();
 extern void setSoundOn(byte on);
 extern void getMenuIcon(int which, byte *dst);
 extern void setNextGame(int which);
-extern void scrollNumber(unsigned long n, int ofs);
+extern void showScore(unsigned long n);
+extern void endGame();
+
 
 

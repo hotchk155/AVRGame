@@ -43,8 +43,8 @@ class CPongGame : public CGame
     {
       switch(event)
       {
-        case EV_TIMER_1:
-          scrollNumber(12345, count++);
+        case EV_TIMER_1:1;
+//          showScore(12345);
           //showNumber(count++,0);
       }
     }

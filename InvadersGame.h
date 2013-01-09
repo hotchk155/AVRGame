@@ -18,7 +18,7 @@ class CInvadersGame : public CGame
   char invadersDir;
   char maxIX;
   char minIX;
-  char maxIY;
+  char playerCaught;
   char invaderCount;
   char toggle;
   char bulletX;
@@ -28,6 +28,7 @@ class CInvadersGame : public CGame
   char mothershipX;
   byte buildings[2];
   unsigned long nextShotMove;
+  int invaderPeriod;
   public:
     static void getGameIcon(byte *dst)
     {
@@ -42,11 +43,13 @@ class CInvadersGame : public CGame
     
     void init()
     {
+      invaderPeriod = 600;
       playerX = 4;
       newScreen();
     }
     void newScreen()
     {
+      playerCaught = 0;
       mothershipX = -1;
       bulletY = -1;
       Disp8x8.cls();
@@ -58,16 +61,16 @@ class CInvadersGame : public CGame
       invadersY = 1;
       invadersDir = 1;
       toggle = 1;
-      Timer1Period = 600;
+      Timer1Period = invaderPeriod;
       Timer3Period = 400;
       Timer4Period = 400;
       memset(bombX,-1,sizeof bombX);
+      invaderPeriod -= 50;
     }
     void renderInvaders(char colour)
     {
       maxIX = -1;
       minIX = 8;
-      maxIY = -1;
       invaderCount = 0;
       for(int iy = 0; iy < 3; ++iy) 
         for(int ix = 0; ix < 3; ++ix) 
@@ -79,7 +82,8 @@ class CInvadersGame : public CGame
             Disp8x8.set(col, row, colour);
             if(col < minIX) minIX = col;
             if(col > maxIX) maxIX = col;
-            if(row > maxIY) maxIY = row;
+            if(row == 7 && col == playerX)       
+              playerCaught = 1;
           }
     }
     byte checkForHit()
@@ -101,15 +105,6 @@ class CInvadersGame : public CGame
        }
       }
       return 0;
-    }
-    void playerDead()
-    {
-      for(;;)
-      {
-        for(int i=0;i<100;++i)
-          Disp8x8.refresh();
-        delay(200);
-      }
     }
     void dropBomb()
     {
@@ -163,65 +158,10 @@ class CInvadersGame : public CGame
             playSound(1000,20);
           }      
           break;
-        case EV_TIMER_4:          // TIMER4 runs mothership at top of screen
-          if(mothershipX >= 0)
-          {
-            Disp8x8.set(mothershipX,0,DISP_OFF);
-            if(++mothershipX > 7)
-              mothershipX = -1;
-          }
-          else if(!random(30))
-          {
-            mothershipX = 0;
-          }          
-          break;
 
-        case EV_TIMER_3:                  // TIMER3 USED FOR ALIEN BOMBS
-            for(i=7; i>0; --i)
-            {
-              if(bombX[i] > 0)
-                Disp8x8.set(bombX[i],i,DISP_OFF);
-              if(bombX[i] > 7)
-                bombX[i] = -1;
-            }
-            for(i=7; i>0; --i)
-            {
-              bombX[i] = bombX[i-1];
-              if(Disp8x8.get(bombX[i],i) == DISP_GREEN)
-                bombX[i]+=8;
-            }
-
-            bombX[0] = -1;
-            if(!random(3))
-              dropBomb();
-            break;
             
-        case EV_TIMER_2:   // TIMER2 USED FOR PLAYER BULLET
-            Disp8x8.set(bulletX,bulletY,DISP_OFF);
-            bulletY--;
-            if(bulletStop || bulletY<0)
-            {
-              Timer2Period = 0;
-            }
-            else if(checkForHit())
-            {
-              playSound(800,100);
-              Timer1Period -= 50;
-              bulletStop = 1;
-            }
-            else if(bulletY==0 && bulletX==mothershipX)
-            {
-              mothershipX=-1;
-              playSound(2000,300);
-              bulletStop = 1;
-            }
-            else if(Disp8x8.get(bulletX,bulletY))
-            {
-              bulletStop = 1;
-            }
-            break;
-            
-        case EV_TIMER_1:          // TIMER2 USED FOR MOVEMENT OF INVADERS
+        // TIMER1 USED FOR MOVEMENT OF INVADERS            
+        case EV_TIMER_1:          
           if(toggle)
           {
             playSound(400,100);
@@ -246,10 +186,82 @@ class CInvadersGame : public CGame
           }
           toggle = !toggle;
           break;      
+          
+        // TIMER2 USED FOR PLAYER BULLET
+        case EV_TIMER_2:   
+            Disp8x8.set(bulletX,bulletY,DISP_OFF);
+            bulletY--;
+            if(bulletStop || bulletY<0)
+            {
+              Timer2Period = 0;
+            }
+            else if(checkForHit())
+            {
+              gameScore += 25; // hit invader
+              playSound(800,100);
+              if(Timer1Period > 100)
+                Timer1Period -= 60;
+              bulletStop = 1;
+            }
+            else if(bulletY==0 && bulletX==mothershipX)
+            {
+              mothershipX=-1;
+              playSound(2000,300);
+              bulletStop = 1;
+              gameScore += 250; // mothership bonus
+            }
+            else if(Disp8x8.get(bulletX,bulletY))
+            {
+              bulletStop = 1;
+            }
+            break;
+            
+        // TIMER3 USED FOR ALIEN BOMBS
+        case EV_TIMER_3:                  
+            for(i=7; i>0; --i)
+            {
+              if(bombX[i] > 0)
+                Disp8x8.set(bombX[i],i,DISP_OFF);
+              if(bombX[i] > 7)
+                bombX[i] = -1;
+            }
+            for(i=7; i>0; --i)
+            {
+              bombX[i] = bombX[i-1];
+              if(Disp8x8.get(bombX[i],i) == DISP_GREEN)
+                bombX[i]+=8;
+            }
+
+            bombX[0] = -1;
+            if(!random(5))
+              dropBomb();
+            break;
+            
+        // TIMER4 runs mothership at top of screen
+        case EV_TIMER_4:          
+          if(mothershipX >= 0)
+          {
+            Disp8x8.set(mothershipX,0,DISP_OFF);
+            if(++mothershipX > 7)
+              mothershipX = -1;
+          }
+          else if(!random(30))
+          {
+            mothershipX = 0;
+          }          
+          break;
       }
       renderInvaders(DISP_RED);
       if(!invaderCount)
+      {
+         for(char i=0;i<32;++i)
+         {
+           playSound(500 + i*20,20);
+           delay(20);
+         }
+         gameScore += 200; // level clearing bonus
          newScreen();
+      }
       Disp8x8.set(playerX,7,DISP_RED);
       for(int i=0; i<8; ++i)        
         if(bombX[i] > 0)
@@ -258,10 +270,14 @@ class CInvadersGame : public CGame
         Disp8x8.set(bulletX,bulletY,DISP_YELLOW);
       if(mothershipX >= 0)
         Disp8x8.set(mothershipX,0,DISP_GREEN);
-      if(bombX[7] == playerX)
+      if(bombX[7] == playerX || playerCaught)
       {
-        playSound(200,1000);
-        playerDead();
+         for(char i=32;i>0;--i)
+         {
+           playSound(500 + i*20,20);
+           delay(20);
+         }
+         endGame();
       }     
     }
 };
