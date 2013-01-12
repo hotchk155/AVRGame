@@ -1,22 +1,36 @@
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+////
+//// A V R G A M E    C O R E
+//// 
+//// The main sketch file for the AVRGAME project
+//// 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+
 #include <Arduino.h>
 #include <Tone.h>
 #include <EEPROM.h>
 
 #include "AVRGame.h"
 #include "Menu.h"
+
+// Include all game headers here
 #include "InvadersGame.h"
 #include "LanderGame.h"
 #include "BreakoutGame.h"
 #include "PongGame.h"
 
+// Global variables
+CGame *pGame = NULL;
 Disp8x8Class Disp8x8;
 Tone speaker;
 byte soundOn = 0;
 char nextGame = -1;
+byte heartbeat = 0;
 unsigned long gameScore;
 char firstButtonPress = 1;
-
-CGame *pGame = NULL;
+unsigned long menuSelectKeyPressed = 0;
 unsigned long timeButtonAPress = 0;
 unsigned long timeButtonBPress = 0;
 unsigned long timeButtonCPress = 0;
@@ -32,30 +46,41 @@ unsigned int Timer3Period;
 unsigned int Timer4Period;
 unsigned int Timer5Period;
 
-void setNextGame(int which)
-{
-  nextGame = which;
-}
+///////////////////////////////////////////////////////////////////////////
+// getMenuIcon
+// Defines the content of the game menu. Any new games need to be hooked into
+// the menu via this function
 void getMenuIcon(int which, byte *dst)
 {
   memset(dst,0,16);
   switch(which)
   {
+    // BEGIN LIST OF GAMES
     case 0: CInvadersGame::getGameIcon(dst); break;
     case 1: CLanderGame::getGameIcon(dst); break;
     case 2: CBreakoutGame::getGameIcon(dst); break;
     case 3: CPongGame::getGameIcon(dst); break;
+    // END LIST OF GAMES
+    
     default: CMenu::getGameIcon(dst); break; // Last item is the sound toggle
   }
 }
+
+///////////////////////////////////////////////////////////////////////////
+// startGame
+// Creates an instance of a game class and starts it running. The list of games
+// defined here must match the list in the getMenuIcon function
 void startGame(int which)
 {
   switch(which)
   {
+    // BEGIN LIST OF GAMES
     case 0: pGame = new CInvadersGame(); break;
     case 1: pGame = new CLanderGame(); break;
     case 2: pGame = new CBreakoutGame(); break;
     case 3: pGame = new CPongGame(); break;
+    // END LIST OF GAMES
+    
     default: pGame =new CMenu(); which = NUM_GAMES; break;
   }    
   EEPROM.write(EEPROM_GAMESELECTED,which);
@@ -75,37 +100,61 @@ void startGame(int which)
   pGame->handleEvent(EV_START);
 }
 
-void initGames()
+///////////////////////////////////////////////////////////////////////////
+// setNextGame
+// Called from the Menu to select a game to start up
+void setNextGame(int which)
 {
-   byte which = EEPROM.read(EEPROM_GAMESELECTED);
-   startGame(which);
+  nextGame = which;
 }
 
-inline void playSound(int pitch, int dur)
-{
-  if(soundOn)
-    speaker.play(pitch,dur);
-}
-void setSoundOn(byte on)
-{
-  soundOn = on;
-  EEPROM.write(EEPROM_SOUNDON,soundOn);
-}
-byte isSoundOn()
-{
-  return soundOn;
-}
+///////////////////////////////////////////////////////////////////////////
+// initSound
+// Simple wrapper around the Tone library to first check if sound is 
+// enabled by the user
 void initSound()
 {
    speaker.begin(P_SPK);
    soundOn = EEPROM.read(EEPROM_SOUNDON);
 }
 
+///////////////////////////////////////////////////////////////////////////
+// playSound
+// Simple wrapper around the Tone library to first check if sound is 
+// enabled by the user
+inline void playSound(int pitch, int dur)
+{
+  if(soundOn)
+    speaker.play(pitch,dur);
+}
+
+///////////////////////////////////////////////////////////////////////////
+// setSoundOn
+void setSoundOn(byte on)
+{  
+  soundOn = on;
+  // remember the setting in EEPROM
+  EEPROM.write(EEPROM_SOUNDON,soundOn);
+}
+
+///////////////////////////////////////////////////////////////////////////
+// isSoundOn
+byte isSoundOn()
+{
+  return soundOn;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// getDigit
+// insert a digit 0-9 (defined in a 5x4 grid) into a byte buffer as 
+// either the left or right 4 columns
 void getDigit(byte which, byte side, byte *data)
 {
     byte d0=0,d1=0,d2=0;
     switch(which)
     {
+        // set up the character design for the digit (3 bytes contain the 5 nybbles 
+        // that define the 5x4 charater)
         case 0: d0=0b01110101; d1=0b01010101; d2=0b01110000; break;
         case 1: d0=0b00100110; d1=0b00100010; d2=0b01110000; break;
         case 2: d0=0b01110001; d1=0b01110100; d2=0b01110000; break;
@@ -117,6 +166,8 @@ void getDigit(byte which, byte side, byte *data)
         case 8: d0=0b01110101; d1=0b01110101; d2=0b01110000; break;
         case 9: d0=0b01110101; d1=0b01110001; d2=0b00010000; break;
     }
+    
+    // extract and shift byte values as needed
     byte o0=(d0>>4)&0x0f;
     byte o1=(d0)&0x0f;
     byte o2=(d1>>4)&0x0f;
@@ -139,6 +190,10 @@ void getDigit(byte which, byte side, byte *data)
     }
 }
 
+///////////////////////////////////////////////////////////////////////////
+// showScore
+// This function displays a number on the display, scrolling it to allow
+// all digits to be seen
 void showScore(unsigned long n)
 {  
   unsigned long div = 10000000;
@@ -175,6 +230,11 @@ void showScore(unsigned long n)
   }  
 }
 
+///////////////////////////////////////////////////////////////////////////
+// endGame
+// Standard "Game Over" routine alternately flashes the last display frame 
+// of the game and scrolls the content of the gameScore variable. The function
+// does not return (user must reset the console)
 void endGame() 
 {
   byte red[8];
@@ -196,19 +256,12 @@ void endGame()
   }
 }
 
+///////////////////////////////////////////////////////////////////////////
+// setup
+// Arduino "setup" entry point called when the sketch starts
 void setup() 
-{  
-  pinMode(P_COL0, OUTPUT);
-  pinMode(P_COL1, OUTPUT);
-  pinMode(P_COL2, OUTPUT);
-  pinMode(P_COL3, OUTPUT);
-  pinMode(P_COL4, OUTPUT);
-  pinMode(P_COL5, OUTPUT);
-  pinMode(P_COL6, OUTPUT);
-  pinMode(P_COL7, OUTPUT);
-  pinMode(P_CLK, OUTPUT);
-  pinMode(P_OE, OUTPUT);
-  pinMode(P_DAT, OUTPUT);
+{    
+  // configure IO pins
   pinMode(P_LED, OUTPUT);
   pinMode(P_SPK, OUTPUT);
   pinMode(P_BUTA, INPUT);
@@ -216,25 +269,30 @@ void setup()
   pinMode(P_BUTC, INPUT);
   pinMode(P_BUTD, INPUT);
   
-  digitalWrite(P_OE, LOW);
+  // set internal pull up resistors on button inputs
   digitalWrite(P_BUTA, HIGH);
   digitalWrite(P_BUTB, HIGH);
   digitalWrite(P_BUTC, HIGH);
   digitalWrite(P_BUTD, HIGH);
   
+  // initialise sound handling
   initSound();
-  initGames();
+  
+  // the last selected game is started (or menu if not valid)
+  byte which = EEPROM.read(EEPROM_GAMESELECTED);
+  startGame(which);
 }
 
-
-
-byte q = 0;
-// the loop routine runs over and over again forever:
-unsigned long modePress = 0;
-void loop() {
+///////////////////////////////////////////////////////////////////////////
+// loop
+// Arduino "loop" entry point called repeatedly
+void loop() 
+{
   byte event = 0;
   unsigned long milliseconds = millis();
 
+  // We use the milliseconds until first button press after startup to give us some random
+  // number entropy
   if(firstButtonPress)
   {
     if(digitalRead(P_BUTA) == LOW || digitalRead(P_BUTB) == LOW || digitalRead(P_BUTC) == LOW || digitalRead(P_BUTD))
@@ -244,23 +302,26 @@ void loop() {
     }
   }
   
+  // Check for buttons A and C being held together for 1 second. This
+  // combination returns to the menu
   if(digitalRead(P_BUTA) == LOW && digitalRead(P_BUTC) == LOW) 
   {
-    if(!modePress) 
+    if(!menuSelectKeyPressed) 
     {
-      modePress = milliseconds + 2000;
+      menuSelectKeyPressed = milliseconds + 1000;
     }
-    else if(milliseconds > modePress)
+    else if(milliseconds > menuSelectKeyPressed)
     {
       speaker.play(1000,20); 
-      setNextGame(NUM_GAMES);
+      setNextGame(NUM_GAMES); // select the last game, which is always the menu handler
     }
   }  
   else
   {
-    modePress = 0;
+    menuSelectKeyPressed = 0;
   }
  
+  // Poll and debounce button A
   if(digitalRead(P_BUTA) == LOW) 
   {
     if(!timeButtonAPress)
@@ -275,6 +336,7 @@ void loop() {
       pGame->handleEvent(EV_RELEASE_A);
   }
   
+  // Poll and debounce button B
   if(digitalRead(P_BUTB) == LOW) 
   {
     if(!timeButtonBPress)
@@ -289,6 +351,7 @@ void loop() {
       pGame->handleEvent(EV_RELEASE_B);
   }
 
+  // Poll and debounce button C
   if(digitalRead(P_BUTC) == LOW) 
   {
     if(!timeButtonCPress)
@@ -303,6 +366,7 @@ void loop() {
       pGame->handleEvent(EV_RELEASE_C);
   }
 
+  // Poll and debounce button D
   if(digitalRead(P_BUTD) == LOW) 
   {
     if(!timeButtonDPress)
@@ -317,7 +381,8 @@ void loop() {
       pGame->handleEvent(EV_RELEASE_D);
   }
   
-   
+
+  // Check whether timer events 1..5 are due
   if(Timer1Period && nextTimer1Event < milliseconds)
   {
       pGame->handleEvent(EV_TIMER_1);
@@ -343,9 +408,12 @@ void loop() {
       pGame->handleEvent(EV_TIMER_5);
       nextTimer5Event = milliseconds + Timer5Period;
   }
- 
+
+  // refresh the display 
   Disp8x8.refresh();
   
+  // check if a change of game has been requested by the 
+  // currently running game. This is used by the menu
   if(nextGame >= 0)
   {
     delete pGame;
@@ -354,6 +422,7 @@ void loop() {
     nextGame = -1;
   }
   
-  digitalWrite(P_LED,q&128);
-  q++;
+  // Flash the heartbeat LED
+  digitalWrite(P_LED,heartbeat&128);
+  heartbeat++;
 }

@@ -270,7 +270,7 @@ class CInvadersGame : public CGame
         Disp8x8.set(bulletX,bulletY,DISP_YELLOW);
       if(mothershipX >= 0)
         Disp8x8.set(mothershipX,0,DISP_GREEN);
-      if(bombX[7] == playerX || playerCaught)
+      if((bombX[7] == playerX) || playerCaught)
       {
          for(char i=32;i>0;--i)
          {

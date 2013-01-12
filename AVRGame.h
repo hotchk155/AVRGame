@@ -1,14 +1,14 @@
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+////
+//// A V R G A M E    C O R E
+//// 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 
-/*
-#define P_COL0  13
-#define P_COL1  12
-#define P_COL2  11
-#define P_COL3  10
-#define P_COL4  14
-#define P_COL5  15
-#define P_COL6  16
-#define P_COL7  17
-*/
+#define NUM_GAMES 4 // change this number to have move games in the menu
+
+// define the pins for the matrix columns
 #define P_COL7  14
 #define P_COL6  15
 #define P_COL5  16
@@ -18,29 +18,37 @@
 #define P_COL1  11
 #define P_COL0  10
 
+// define the pins for the shift registers
 #define P_CLK   3
 #define P_OE   9
 #define P_DAT   2
 #define P_LED   5
 
+// define the pins for speaker and buttons
 #define P_SPK   8
 #define P_BUTA  18
 #define P_BUTB  19
 #define P_BUTC  6
 #define P_BUTD  7
 
+// LED colours
 #define DISP_OFF    0
 #define DISP_RED    1
 #define DISP_GREEN  2
 #define DISP_YELLOW 3
+
+// button debounce time (ms)
 #define DEBOUNCE_TIME   20
-#define NUM_GAMES 4
+
+// menu size
 #define MENU_SIZE (NUM_GAMES + 1)
 #define MENU_SOUND NUM_GAMES
 
+// eeprom location addresses
 #define EEPROM_SOUNDON 100
 #define EEPROM_GAMESELECTED 101
 
+// events passed to game handers
 enum {
   EV_START    = 1,
   EV_PRESS_A,
@@ -75,15 +83,33 @@ public:
   byte green[8];
   
   Disp8x8Class() {
+    pinMode(P_COL0, OUTPUT);
+    pinMode(P_COL1, OUTPUT);
+    pinMode(P_COL2, OUTPUT);
+    pinMode(P_COL3, OUTPUT);
+    pinMode(P_COL4, OUTPUT);
+    pinMode(P_COL5, OUTPUT);
+    pinMode(P_COL6, OUTPUT);
+    pinMode(P_COL7, OUTPUT);
+    pinMode(P_CLK, OUTPUT);
+    pinMode(P_OE, OUTPUT);
+    pinMode(P_DAT, OUTPUT);
+    digitalWrite(P_OE, LOW);    
     cls();
   }
   
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // cls
+  // Clear the display
   void cls() 
   {
     memset(red,0,8);
     memset(green,0,8);
   }
   
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // set
+  // Set a pixel colour
   void set(byte col, byte row, byte colour)
   {
     switch(colour)
@@ -107,12 +133,18 @@ public:
     }
   }
   
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // get
+  // Fetch a pixel colour
   byte get(byte col, byte row)
   {
     return (red[row%8]&(1<<(7-col%8))? DISP_RED : 0) |
           (green[row%8]&(1<<(7-col%8))? DISP_GREEN : 0);
   }
   
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // refresh
+  // Refresh the display matrix. This function must be called repeatedly for the display to work
   void refresh()
   {
     digitalWrite(P_CLK, LOW);
@@ -120,27 +152,14 @@ public:
     digitalWrite(P_CLK, HIGH);
     digitalWrite(P_DAT, LOW);
   
-  //00  RD4
-  //01  RD5
-  //02  RD6
-  //03  GR7
-  //04  RD7
-  //05  GR6
-  //06  GR5
-  //07  GR4
-  //08  GR0
-  //09  GR1
-  //10  RD2
-  //11  RD3
-  //12  GR3
-  //13  GR2
-  //14  RD1
-  //15  RD0
-  
     for(int i=0; i<16; ++i)
     {
       digitalWrite(P_CLK, LOW);
       byte d;
+      
+      // Note that this switch statement maps the shift register bits to 
+      // the actual row position and colour. It depends on the specific 
+      // wiring of the circuit board 
       switch(i) 
       {
         case 0: d = red[4]; break;
@@ -169,8 +188,6 @@ public:
       digitalWrite(P_COL6, LOW);
       digitalWrite(P_COL7, LOW);
   
-  //    CLR_COLS;    
-      
       digitalWrite(P_CLK, HIGH);
   
       digitalWrite(P_COL0, !!(d&1));
@@ -188,6 +205,17 @@ public:
 };
 extern Disp8x8Class Disp8x8;
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////
+/////////
+/////////   G A M E   C L A S S   P R O T O T Y P E
+/////////
+/////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class CGame 
 {
   public:
@@ -196,6 +224,7 @@ class CGame
 };
 
 
+// External variables
 extern unsigned int Timer1Period;
 extern unsigned int Timer2Period;
 extern unsigned int Timer3Period;
@@ -209,6 +238,4 @@ extern void getMenuIcon(int which, byte *dst);
 extern void setNextGame(int which);
 extern void showScore(unsigned long n);
 extern void endGame();
-
-
 
