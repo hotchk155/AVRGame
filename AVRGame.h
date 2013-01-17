@@ -6,7 +6,7 @@
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
-#define NUM_GAMES 4 // change this number to have move games in the menu
+#define NUM_GAMES 5 // change this number to have move games in the menu
 
 // define the pins for the matrix columns
 #define P_COL7  14
@@ -132,6 +132,10 @@ public:
         break;
     }
   }
+  void set(byte pos, byte colour)
+  {
+    set(pos%8,pos/8,colour);
+  }
   
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // get
@@ -140,6 +144,12 @@ public:
   {
     return (red[row%8]&(1<<(7-col%8))? DISP_RED : 0) |
           (green[row%8]&(1<<(7-col%8))? DISP_GREEN : 0);
+  }
+  byte get(byte pos)
+  {
+    byte row = (pos/8)%8;
+    return (red[row]&(1<<(7-pos%8))? DISP_RED : 0) |
+          (green[row]&(1<<(7-pos%8))? DISP_GREEN : 0);
   }
   
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
