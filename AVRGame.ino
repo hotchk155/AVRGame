@@ -20,7 +20,7 @@
 #include "LanderGame.h"
 #include "BreakoutGame.h"
 #include "PongGame.h"
-//#include "BlocksGame.h"
+#include "BlocksGame.h"
 #include "FourInARowGame.h"
 
 // Global variables
@@ -59,7 +59,7 @@ void getMenuIcon(int which, byte *dst)
   {
     // BEGIN LIST OF GAMES
     case 0: CInvadersGame::getGameIcon(dst); break;
-    case 1: CLanderGame::getGameIcon(dst); break;
+    case 1: CBlocksGame::getGameIcon(dst); break;
     case 2: CBreakoutGame::getGameIcon(dst); break;
     case 3: CPongGame::getGameIcon(dst); break;
     case 4: CFourInARowGame::getGameIcon(dst); break;
@@ -79,7 +79,7 @@ void startGame(int which)
   {
     // BEGIN LIST OF GAMES
     case 0: pGame = new CInvadersGame(); break;
-    case 1: pGame = new CLanderGame(); break;
+    case 1: pGame = new CBlocksGame(); break;
     case 2: pGame = new CBreakoutGame(); break;
     case 3: pGame = new CPongGame(); break;
     case 4: pGame = new CFourInARowGame(); break;

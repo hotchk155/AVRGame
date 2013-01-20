@@ -3,7 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////
 /////////
-/////////   P O N G     G A M E 
+/////////   B L O C K S     G A M E 
 /////////
 /////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -37,148 +37,262 @@ class CBlocksGame : public CGame
       
     }    
 
-    /*
-        1111
-        
-        2     22  222    2
-        222   2     2    2
-              2         22
-        
-          3
-        333
-        
-        44
-        44
-        
-         55
-        55
-        
-         6
-        666
-        
-        77
-         77
-         
-         
-         0
-        3 1
-         2
-    */
-
-//J
-  0b100111000
-  0b011010010
-  0b000111001
-  0b010010110
-//L
-  0b001111000  
-  0b010010011  
-  0b000111100  
-  0b110010010
-  
-//O - special
-  
-//S
- 0b011110000 
- 0b010011001 
- 0b000011110 
- 0b100110010
- 
-//T
- 0b010111000 
- 0b010011010 
- 0b000111010
- 0b010110010
- 
-//Z
- 0b110011000
- 0b001011010
- 0b000110011 
- 0b010110100
-  
-  
-
-  #define HASH(piece, dir) (((piece)*8)+dir)
-  #define SET_SHAPE(a,b,c,d,x0,xx,y0,yy) {info[0]=a;info[1]=b;info[2]=c;info[3]=d;info[5]=x0;info[6]=xx;info[7]=y0;info[8]=yy;}
-  void getPieceInfo(byte piece, byte dir, byte *info)
+  enum {
+    PIECE_I,
+    PIECE_O,
+    PIECE_S,
+    PIECE_Z,
+    PIECE_L,
+    PIECE_J,
+    PIECE_T,
+    PIECE_MAX
+  };
+  enum {
+     DIR_0,
+     DIR_90,
+     DIR_180,
+     DIR_270
+  };
+  void mapPiece(byte piece, byte dir, byte *result)
   {
-    switch(HASH(piece, dir))
+    switch(piece)
     {
-      /*
-            0X00  0
-                  X 
-                  0
-                  0
-      */
-      case HASH(0,0): HASH(0,2): SET_SHAPE(0,1,2,3,0,4,0,7}; break;
-      case HASH(0,1): HASH(0,3): SET_SHAPE(0,8,16,24,0,7,0,4}; break;
-  
-      /*
-            1    11  1X1   1
-            1X1  X     1   X
-                 1        11
-      */
-      case HASH(1,0): SET_SHAPE(0,8,9,10}; break;
-      case HASH(1,1): SET_SHAPE(0,1,8,16}; break;
-      case HASH(1,2): SET_SHAPE(0,1,2,10}; break;
-      case HASH(1,3): SET_SHAPE(1,9,16,17}; break;
+      // I PIECE
+      case PIECE_I:
+        switch(dir) {
+          case DIR_0: case DIR_180:   result[1] = 0b11110000; break;
+          case DIR_90: case DIR_270:  result[0] = result[1] = result[2] = result[3] = 0b01000000; break;
+        } break;        
         
-      /*
-            2  2   2X2  22
-          2X2  X   2     X
-               22        2
-      */             
-      case HASH(2,0): SET_SHAPE(2,8,9,10}; break;
-      case HASH(2,1): SET_SHAPE(0,8,16,17}; break;
-      case HASH(2,2): SET_SHAPE(0,1,2,8}; break;
-      case HASH(2,3): SET_SHAPE(0,1,9,17}; break;
-          
-      /*
-          33  
-          33
-      */             
-      case HASH(3,0): case HASH(3,1): case HASH(3,2): case HASH(3,3): SET_SHAPE(0,1,8,9}; break;
-      
-      /*
-           44  4
-          44   X4
-                4
-      */             
-      case HASH(4,0): HASH(4,2): SET_SHAPE(1,2,8,9}; break;
-      case HASH(4,1): HASH(4,3): SET_SHAPE(1,8,9,17}; break;
-      
-  
-      /*
-          5   5   5X5   5
-         5X5  X5   5   5X
-              5         5
-      */             
-      case HASH(5,0): SET_SHAPE(1,8,9,10}; break;
-      case HASH(5,1): SET_SHAPE(1,8,9,16}; break;
-      case HASH(5,2): SET_SHAPE(0,1,2,9}; break;
-      case HASH(5,3): SET_SHAPE(1,8,9,17}; break;
-  
-      /*
-          66     6
-           66   6X
-                6
-      */             
-      case HASH(6,0): HASH(6,2): SET_SHAPE(0,1,9,10}; break;
-      case HASH(6,1): HASH(6,3): SET_SHAPE(1,8,9,16}; break;
+      // O PIECE
+      case PIECE_O:
+        result[0] = result[1] = 0b11000000; break;
+        break;        
+        
+      // S PIECE
+      case PIECE_S:
+        switch(dir) {
+          case DIR_0: result[0] =   0b01100000; result[1] = 0b11000000; break;
+          case DIR_90: result[0] =  0b01000000; result[1] = 0b01100000;  result[2] = 0b00100000; break;
+          case DIR_180: result[1] = 0b01100000; result[2] = 0b11000000; break;
+          case DIR_270: result[0] = 0b10000000; result[1] = 0b11000000;  result[2] = 0b01000000; break;
+        } break;        
+        
+      // Z PIECE
+      case PIECE_Z:
+        switch(dir) {
+          case DIR_0: result[0] =   0b11000000; result[1] = 0b01100000; break;
+          case DIR_90: result[0] =  0b00100000; result[1] = 0b01100000;  result[2] = 0b01000000; break;
+          case DIR_180: result[1] = 0b11000000; result[2] = 0b01100000; break;
+          case DIR_270: result[0] = 0b01000000; result[1] = 0b11000000;  result[2] = 0b10000000; break;
+        } break;        
+        
+        
+      // L PIECE
+      case PIECE_L:
+        switch(dir) {
+          case DIR_0: result[0] = 0b00100000; result[1] = 0b11100000; break;
+          case DIR_90: result[0] = result[1] = 0b01000000; result[2] = 0b01100000; break;
+          case DIR_180: result[1] = 0b11100000; result[2] = 0b10000000; break;
+          case DIR_270: result[0] = 0b11000000; result[1] = result[2] = 0b01000000; break;
+        } break;        
+        
+      // J PIECE
+      case PIECE_J:
+        switch(dir) {
+          case DIR_0: result[0] =   0b10000000; result[1] = 0b11100000; break;
+          case DIR_90: result[0] =  0b01100000; result[1] = result[2] = 0b01000000; break;
+          case DIR_180: result[1] = 0b11100000; result[2] = 0b00100000; break;
+          case DIR_270: result[0] = result[1] = 0b01000000; result[2] = 0b11000000; break;
+        } break;        
+              
+      // T PIECE
+      case PIECE_T:
+        switch(dir) {
+          case DIR_0: result[0] = 0b10000000; result[1] = 0b11000000; result[2] = 0b10000000; break;
+          case DIR_90: result[0] = 0b11100000; result[1] = 0b01000000; break;
+          case DIR_180: result[0] = 0b00100000; result[1] = 0b01100000; result[2] = 0b00100000; break;
+          case DIR_270: result[1] = 0b01000000; result[2] = 0b11100000; break;
+        } break;        
     }
   }
+  
 
-
+  byte placePiece;
+  byte placeDir;
+  byte placeCol;
+  byte gridMap[8];
+  byte shadowMap[8];
+  byte pieceMap[4];
+  byte flashShadow;
+  
     void init()
     {
+      flashShadow = 0;
+      placeCol = 1;
+      placePiece = PIECE_T;
+      placeDir = DIR_0;
+      memset(gridMap,0,sizeof gridMap);
+      memset(shadowMap,0,sizeof shadowMap);
+      Disp8x8.cls();
+      Timer1Period = 150;
+      newPiece();
     }
+    
+    byte movePiece(char dr, char dx)
+    {
+      char newDir = placeDir + dr;
+      if(newDir < DIR_0) 
+        newDir = DIR_270;
+      else if(newDir > DIR_270) 
+        newDir = DIR_0;
+      char newCol = constrain(placeCol + dx,0,7);
+      for(byte attempt = 0; attempt < 4; ++attempt)
+      {
+        
+        byte pm[4];
+        memset(pm, 0, 4);
+        mapPiece(placePiece, newDir, pm);
+        pm[0] >>= newCol;
+        pm[1] >>= newCol;
+        pm[2] >>= newCol;
+        pm[3] >>= newCol;
+        
+        // outside play area on left        
+        if((pm[0] & 0x80)||(pm[1] & 0x80)||(pm[2] & 0x80)||(pm[3] & 0x80))
+        {
+          newCol++; // otherwise must move to right
+          continue;
+        }
+        // outside play are to right?
+        else if((pm[0] & 0x01)||(pm[1] & 0x01)||(pm[2] & 0x01)||(pm[3] & 0x01))
+        {
+          newCol--; // otherwise must move to left
+          continue;
+        }
+          
+        // we're done
+        memcpy(pieceMap, pm, 4);
+        placeDir = newDir;
+        placeCol = newCol;
+        return 1;
+      }        
+      return 0;
+    }
+
+    void setShadowMap()
+    {
+      int row, i;
+      
+      // scan down looking for first collision
+      // betweem the piecemap and the gridmap
+      for(row=-3;row<8;++row)
+      {
+        // piecemap is 4 rows high
+        for(i=0;i<4;++i)
+        {
+          // calc gridmap row corresponding
+          // to the piecemap row and ensure
+          // it is valid on grid
+          int r = row + i;
+          if(r >= 0 && r < 8)        
+          {
+            if(pieceMap[i] && (r == 7)) // resting on bottom row
+              goto JUST_GET_OUT_OF_ALL_THESE_LOOPS_ALREADY;
+            if(r<7 && !!(pieceMap[i] & gridMap[r+1])) // bitwise collision
+              goto JUST_GET_OUT_OF_ALL_THESE_LOOPS_ALREADY;
+          }
+        }        
+      }
+
+JUST_GET_OUT_OF_ALL_THESE_LOOPS_ALREADY: //imho a reasonable use of a goto :)
+
+      // now store the offset data as shadow map
+      memset(shadowMap,0,sizeof shadowMap);
+      for(i=0;i<4;++i)
+      {
+        int r = row + i;
+        if(r >= 0 && r < 8)        
+          shadowMap[r] = pieceMap[i];
+      }
+    } 
+
+    void lockPieceInPlace()
+    {
+      int i,j;
+      
+
+      for(int i=0;i<8;++i)
+        gridMap[i] |= shadowMap[i];
+       
+      // look for full rows we can remove
+      byte again = 1;
+      while(again)
+      { 
+        again=0;
+        for(i=7;i>0;--i)
+        {
+          if(gridMap[i] == 0x7e)
+          {
+            Disp8x8.red[i] = 0xff;
+            Disp8x8.green[i] = 0x7e;
+            for(j=0;j<100;++j)
+              Disp8x8.refresh();
+            Disp8x8.red[i] = 0x81;
+            for(j=i;j>0;--j)
+              gridMap[j] = gridMap[j-1];              
+            gridMap[0] = 0;
+            memcpy(Disp8x8.green, gridMap,8);
+            again = 1;
+            break;
+          }
+        }
+      }
+      
+      // put another piece into play
+      newPiece();
+    }
+    
+    void newPiece()
+    {
+      placePiece = random(PIECE_MAX);
+      placeCol = random(6);
+      placeDir = random(4);
+      movePiece(0,0);
+      setShadowMap();
+    }
+    
     void handleEvent(char event)
     {
+      int i;
       switch(event)
       {
-        case EV_TIMER_1:1;
+        case EV_PRESS_B://left
+          movePiece(0,-1);
+          setShadowMap();
+          break;
+        case EV_PRESS_D://right
+          movePiece(0,+1);
+          setShadowMap();
+          break;
+        case EV_PRESS_A:
+          movePiece(1,0);//rotate
+          setShadowMap();
+          break;
+        case EV_PRESS_C:
+          lockPieceInPlace();
+          break;
+        case EV_TIMER_1:
+          flashShadow = !flashShadow;
           break;
       }
+      for(i=0;i<8;++i)
+      {  
+        Disp8x8.green[i] = gridMap[i];
+        Disp8x8.red[i] = 0x81|shadowMap[i];
+        if(flashShadow)
+          Disp8x8.green[i] |= shadowMap[i];
+      }   
     }
 };
 
