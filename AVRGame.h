@@ -212,6 +212,16 @@ public:
       delayMicroseconds(100);
     }
   }
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // delayWithRefresh
+  // Delay function which keeps display updated
+  void delayWithRefresh(int cycles)
+  {
+    while(cycles-- >0)
+      refresh();
+  }
+
 };
 extern Disp8x8Class Disp8x8;
 

@@ -10,7 +10,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define TIMER1PERIOD 100
-#define TIMER2PERIOD 100
+#define TIMER2PERIOD 50
 class CFourInARowGame : public CGame 
 {
   public:
@@ -36,283 +36,248 @@ class CFourInARowGame : public CGame
       
     }    
 
-    char placeForCPU;
-    char placeCol;
-    char placeRow;    
-    char cursorCol;    
-    byte flashCursor;
+char tdir;
+char tpos;
+    char dropRow;
+    char dropCol;
+    char dropType;
+    byte playerMap[8];
+    byte cpuMap[8];
+    byte pathMap[8];
+    char playerPos;
+    char playerBlink;
     
-    void calc(int x1, int y1, int x2, int y2, int x3, int y3, byte thisColour, byte otherColour, int *maxScore, int tag)
-    {      
-      if(x1<0 || y1<0 || x2<0 || y2<0 || x3<0 || y3<0)
-        return;
-      if(x1>7 || y1>7 || x2>7 || y2>7 || x3>7 || y3>7)
-        return;
-      int s = 0;
-      byte r1 = Disp8x8.get(x1,y1);
-      byte r2 = Disp8x8.get(x2,y2);
-      byte r3 = Disp8x8.get(x3,y3);
-      if(r1 == otherColour || r2 == otherColour || r3 == otherColour)
-        return;
-      if(r1 == thisColour) ++s;      
-      if(r2 == thisColour) ++s;      
-      if(r3 == thisColour) ++s;      
-      if(s>*maxScore)    
-        *maxScore = s;
+    void init() 
+    {
+      playerBlink = 0;
+      playerPos = 0;
+      memset(playerMap, 0, 8);
+      memset(cpuMap, 0, 8);
+      memset(pathMap, 0, 8);
+      tdir = 0; 
+      tpos = 0;
+      Timer1Period = 200;
     }
+    
+     
 /*
-    char getPos(char pos, char orientation, char *p1, char *p2, char *p3)
+            X             X             X             X
+      0b00000000    0b00000000    0b00000000    0b00000000
+      0b00000000    0b00000000    0b00000000    0b00000000
+      0b00000000    0b00000000    0b00000000    0b00000000
+     Y0b00001111   Y0b00011110   Y0b00111100   Y0b01111000
+      0b00000000    0b00000000    0b00000000    0b00000000
+      0b00000000    0b00000000    0b00000000    0b00000000
+      0b00000000    0b00000000    0b00000000    0b00000000
+      
+            X             X             X             X
+      0b00000000    0b00000000    0b00000000    0b00001000
+      0b00000000    0b00000000    0b00001000    0b00001000
+      0b00000000    0b00001000    0b00001000    0b00001000
+     Y0b00001000   Y0b00001000   Y0b00001000   Y0b00001000
+      0b00001000    0b00001000    0b00001000    0b00000000
+      0b00001000    0b00001000    0b00000000    0b00000000
+      0b00001000    0b00000000    0b00000000    0b00000000
+      
+            X             X             X             X
+      0b00000000    0b00000000    0b00000000    0b01000000
+      0b00000000    0b00000000    0b00100000    0b00100000
+      0b00000000    0b00010000    0b00010000    0b00010000
+     Y0b00001000   Y0b00001000   Y0b00001000   Y0b00001000
+      0b00000100    0b00000100    0b00000100    0b00000000
+      0b00000010    0b00000010    0b00000000    0b00000000
+      0b00000001    0b00000000    0b00000000    0b00000000
+
+            X             X             X             X
+      0b00000000    0b00000000    0b00000000    0b00000001
+      0b00000000    0b00000000    0b00000010    0b00000010
+      0b00000000    0b00000100    0b00000100    0b00000100
+     Y0b00001000   Y0b00001000   Y0b00001000   Y0b00001000
+      0b00010000    0b00010000    0b00010000    0b00000000
+      0b00100000    0b00100000    0b00000000    0b00000000
+      0b01000000    0b00000000    0b00000000    0b00000000
+      
+*/      
+      
+
+      // Populate the "path map" for one of 16 paths (each 4 positions long) placed at
+      // any position on the grid. Return 0 if cannot fit the path at this position
+      byte loadPathMap(byte col, byte row, byte whichPath)
+      {            
+        memset(pathMap, 0, 8);
+        byte m[8];
+        byte minX, maxX, minY, maxY;
+#define INIT_MAP(a,b,c,d,e,f,g,x0,xx,y0,yy) { m[0]=a;  m[1]=b;  m[2]=c;  m[3]=d;  m[4]=e;  m[5]=f;  m[6]=g; minX=x0; maxX=xx; minY=y0; maxY=yy; }
+        switch(whichPath)
+        {
+          case  0: INIT_MAP(0x00, 0x00, 0x00, 0x0f, 0x00, 0x00, 0x00, 0, 4, 0, 7); break;
+          case  1: INIT_MAP(0x00, 0x00, 0x00, 0x1e, 0x00, 0x00, 0x00, 1, 5, 0, 7); break;
+          case  2: INIT_MAP(0x00, 0x00, 0x00, 0x3c, 0x00, 0x00, 0x00, 2, 6, 0, 7); break;
+          case  3: INIT_MAP(0x00, 0x00, 0x00, 0x78, 0x00, 0x00, 0x00, 3, 7, 0, 7); break;                
+          case  4: INIT_MAP(0x00, 0x00, 0x00, 0x08, 0x08, 0x08, 0x08, 0, 7, 0, 4); break;
+          case  5: INIT_MAP(0x00, 0x00, 0x08, 0x08, 0x08, 0x08, 0x00, 0, 7, 1, 5); break;
+          case  6: INIT_MAP(0x00, 0x08, 0x08, 0x08, 0x08, 0x00, 0x00, 0, 7, 2, 6); break;
+          case  7: INIT_MAP(0x08, 0x08, 0x08, 0x08, 0x00, 0x00, 0x00, 0, 7, 3, 7); break;                    
+          case  8: INIT_MAP(0x00, 0x00, 0x00, 0x08, 0x04, 0x02, 0x01, 0, 4, 0, 4); break;
+          case  9: INIT_MAP(0x00, 0x00, 0x10, 0x08, 0x04, 0x02, 0x00, 1, 5, 1, 5); break;
+          case 10: INIT_MAP(0x00, 0x20, 0x10, 0x08, 0x04, 0x00, 0x00, 2, 6, 2, 6); break;
+          case 11: INIT_MAP(0x40, 0x20, 0x10, 0x08, 0x00, 0x00, 0x00, 3, 7, 3, 7); break;                              
+          case 12: INIT_MAP(0x00, 0x00, 0x00, 0x08, 0x10, 0x20, 0x40, 3, 7, 0, 4); break;
+          case 13: INIT_MAP(0x00, 0x00, 0x04, 0x08, 0x10, 0x20, 0x00, 2, 6, 1, 5); break;
+          case 14: INIT_MAP(0x00, 0x02, 0x04, 0x08, 0x10, 0x00, 0x00, 1, 5, 2, 6); break;
+          case 15: INIT_MAP(0x01, 0x02, 0x04, 0x08, 0x00, 0x00, 0x00, 0, 4, 3, 7); break;          
+          default: return 0; // invalid
+        }
+        if(col<minX||col>maxX||row<minY||row>maxY)
+          return 0;  // cannot be placed here
+        
+        byte shiftRight = (col > 4) ? (col-4) : 0;
+        byte shiftLeft =  (col < 4) ? (4-col) : 0;
+        int destRow = row-3;
+        for(int i=0; i<7; ++i)
+        {
+          if(destRow >= 0 && destRow < 8)
+            pathMap[destRow] = (m[i]<<shiftLeft)>>shiftRight;
+          ++destRow;
+        }        
+        return 1;             
+    }
+
+    // check if game is won and display the win (does not
+    // return if a win occurs)
+    void checkForWin(byte col, byte row, byte isCpu)
     {
-      #define CALC_POS(a,b,c) *p1=(pos+a); *p2=(pos+b); *p3=(pos+c);
-      switch(orientation)
+      int i;
+      byte *grid = isCpu? cpuMap : playerMap;
+      
+      // try each path
+      for(int path=0; path<16; ++path)
       {
-        case  0: CALC_POS(1,2,3); break;
-        case  1: CALC_POS(-1,1,2); break;
-        case  2: CALC_POS(-2,-1,1); break;
-        case  3: CALC_POS(-3,-2,-1); break;
-        case  4: CALC_POS(7,14,21); break;
-        case  5: CALC_POS(-7,7,14); break;
-        case  6: CALC_POS(-14,-7,7); break;
-        case  7: CALC_POS(-21,-14,-7); break;
-        case  8: CALC_POS(9,18,27); break;
-        case  9: CALC_POS(-9,9,18); break;
-        case 10: CALC_POS(-18,-9,9); break;
-        case 11: CALC_POS(-27,-18,-9); break;
-        case 12: CALC_POS(8,16,24); break;
-        case 13: CALC_POS(-8,8,16); break;
-        case 14: CALC_POS(-16,-8,8); break;
-        case 15: CALC_POS(-24,-16,-8); break;
-        default:
-          return 0;
-      }
-      if(*p1<0||*p1>63||*p2<0||*p2>63||*p3<0||*p3>63)
-        return 0;
-      return 1;
-    }
-*/    
-    
-    int scoreMove(int x, int y, byte thisColour, byte otherColour)
-    {
-     int maxScore = 0;
-     // horizontal
-     // X000 0X00 00X0 000X     
-     calc(  x+1,   y,   x+2,   y,   x+3,   y,   thisColour, otherColour, &maxScore,1);
-     calc(  x-1,   y,   x+1,   y,   x+2,   y,   thisColour, otherColour, &maxScore,2);
-     calc(  x-2,   y,   x-1,   y,   x+1,   y,   thisColour, otherColour, &maxScore,3);
-     calc(  x-3,   y,   x-2,   y,   x-1,   y,   thisColour, otherColour, &maxScore,4);
-     
-     // vertical   X  O  O  O
-     //            O  X  O  O
-     //            O  O  X  O
-     //            O  O  O  X
-     calc(  x,   y+1,   x,   y+2,   x,   y+3,   thisColour, otherColour, &maxScore,5);
-     calc(  x,   y-1,   x,   y+1,   x,   y+2,   thisColour, otherColour, &maxScore,6);
-     calc(  x,   y-2,   x,   y-1,   x,   y+1,   thisColour, otherColour, &maxScore,7);
-     calc(  x,   y-3,   x,   y-2,   x,   y-1,   thisColour, otherColour, &maxScore,8);
-     
-     // diagonal X     O     O     O
-     // TL-BR     O     X     O     O
-     //            O     O     X     O
-     //             O     O     O     X
-     calc(  x+1,   y+1,   x+2,   y+2,   x+3,   y+3,   thisColour, otherColour, &maxScore,9);
-     calc(  x-1,   y-1,   x+1,   y+1,   x+2,   y+2,   thisColour, otherColour, &maxScore,10);
-     calc(  x-2,   y-2,   x-1,   y-1,   x+1,   y+1,   thisColour, otherColour, &maxScore,11);
-     calc(  x-3,   y-3,   x-2,   y-2,   x-1,   y-1,   thisColour, otherColour, &maxScore,12);
-     
-     // diagonal     X     O     O     O
-     // BL-TR       O     X     O     O
-     //            O     O     X     O
-     //           O     O     O     X
-     calc(  x-1,   y+1,   x-2,   y+2,   x-3,   y+3,   thisColour, otherColour, &maxScore,13);
-     calc(  x+1,   y-1,   x-1,   y+1,   x-2,   y+2,   thisColour, otherColour, &maxScore,14);
-     calc(  x+2,   y-2,   x+1,   y-1,   x-1,   y+1,   thisColour, otherColour, &maxScore,15);
-     calc(  x+3,   y-3,   x+2,   y-2,   x+1,   y-1,   thisColour, otherColour, &maxScore,16);
-     
-     return maxScore;
-    }
-    
-    void cpuMove()
-    {
-      int row, col;
-      int score[8] = {0};
-      // for each column
-      for(col=0;col<8;++col)
-      {        
-        // check if the column is full
-        if(Disp8x8.get(col,0))
-        {
-          score[col] = -2;
+        // load up the path if it fits
+        if(!loadPathMap(col, row, path))
           continue;
-        }
-        
-        // find the lowest available
-        // slot in this column
-        for(row=0;row<7;++row)
-        {
-          if(Disp8x8.get(col,row+1))
-            break;
-        }
-        
-        // check how good this position is for
-        // purpose of winning
-        score[col] = scoreMove(col, row, DISP_RED, DISP_GREEN);
-        if(score[col] == 3)
-        {
-          // a certain win! force us to go here
-          score[col] = 4;
-          continue;
-        }
-        else
-        {
-          int s;
-          // check if moving here exposes a win for other player
-          if(row>0)
+          
+        // check whether pathmap is filled with counters
+        byte win = 1;
+        for(i=0; i<8; ++i)
+        {          
+          if((pathMap[i] & grid[i]) != pathMap[i])
           {
-            s = scoreMove(col, row-1, DISP_GREEN, DISP_RED);
-            if(s == 3)
+            win=0;
+            break;
+          }
+        }
+        
+        if(win)
+        {
+          if(isCpu)
+          {
+            for(i=10;i>0;--i)
             {
-              score[col] = -1; // avoid it like hell
-              continue;
+              playSound(200+50*i, 60);
+              Disp8x8.delayWithRefresh(10);
             }
           }
           else
           {
-            // check how good this position is
-            // from aspect of blocking other player
-            int s = scoreMove(col, row, DISP_GREEN, DISP_RED);
-            if(s > score[col])
-              score[col] = s;
-          }          
+            for(i=0;i<10;++i)
+            {
+              playSound(200+50*i, 60);
+              Disp8x8.delayWithRefresh(10);
+            }
+          }
+          
+          byte toggle = 0;
+          for(;;)
+          {
+            int j;
+            for(j=0; j<8; ++j)
+            {
+              Disp8x8.green[j]= playerMap[j];
+              Disp8x8.red[j]= cpuMap[j];
+              if(toggle)
+              {
+                Disp8x8.green[j]|=pathMap[j];
+                Disp8x8.red[j]|=pathMap[j];
+              }
+            }
+            for(j=0;j<100;++j)
+              Disp8x8.refresh();
+            toggle=!toggle;
+          }
         }
-      }
-      
-      // find out which column has the highest score
-      int maxScore = 0;
-      placeCol = 0;
-      for(col=0;col<8;++col)
-      {
-        if(score[col] == -2)
-          continue;
-        if(score[col] > maxScore)
-        {
-          placeCol = col;
-          maxScore = score[col];
-        }                    
-      }            
-
-      // randomize among columns with same score
-      int shuffle = random(8);
-      col = placeCol;
-      while(shuffle--)
-      {
-        if(score[col] == maxScore)
-          placeCol = col;
-        if(++col>7)
-          col=0;
-      }
-      placeRow = 0;
-      placeForCPU = 1;
-      Disp8x8.set(placeCol, 0, DISP_RED);                
-      Timer2Period = TIMER2PERIOD;
+      }      
     }
     
-    void init()
-    {
-      placeForCPU = 0;
-      placeCol = 0;
-      placeRow = 0;
-      flashCursor = 0;
-      cursorCol = 0;
-      Timer1Period = TIMER1PERIOD;
-      Timer2Period = 0;
-      
-      Serial.begin(9600);
-    }
     void handleEvent(char event)
     {
       
+      memcpy(Disp8x8.green, playerMap, 8);
+      memcpy(Disp8x8.red, cpuMap, 8);
+      
       int i;
-      switch(event)
+      if(Timer2Period) // when drop is in progress all other controls are disabled
       {
-          case EV_PRESS_A:
-          case EV_PRESS_C:
-            if(Timer1Period)
+        if(event == EV_TIMER_2)
+        {
+          playSound(400+ dropRow * 200, 2);
+          Disp8x8.set(dropCol,dropRow,dropType? DISP_RED : DISP_GREEN);
+          int nextRow = dropRow + 1;
+          if(nextRow > 7 || ((playerMap[nextRow] & (1<<(7-dropCol))) || (cpuMap[nextRow] & (1<<(7-dropCol)))))
+          {
+            Timer2Period = 0;
+            if(dropType) // CPU
             {
-               Disp8x8.set(cursorCol, 0, DISP_GREEN);                
-               if(Disp8x8.get(cursorCol, 1)) // check if the counter is inserted on top row
-               {
-                 for(i=0;i<8;++i) // need to move the cursor to next free column
-                 {
-                   if(++cursorCol > 7)
-                     cursorCol = 0;
-                   if(!Disp8x8.get(cursorCol, 0))
-                     break;
-                 }
-               }
-               placeRow = 0;
-               placeCol = cursorCol;
-               placeForCPU = 0;
-               Timer2Period = TIMER2PERIOD;
-               Timer1Period = 0;
-            }
-            break;
-            
-          case EV_PRESS_B:
-            if(Timer1Period)
-            {
-               Disp8x8.set(cursorCol, 0, DISP_OFF);
-               for(i=0;i<8;++i)
-               {
-                 if(--cursorCol < 0)
-                   cursorCol = 7;
-                 if(!Disp8x8.get(cursorCol, 0))
-                   break;
-               }
-               Disp8x8.set(cursorCol, 0, DISP_GREEN);
-             }
-             break;
-             
-          case EV_PRESS_D:
-             if(Timer1Period)
-             {
-               Disp8x8.set(cursorCol, 0, DISP_OFF);
-               for(i=0;i<8;++i)
-               {
-                 if(++cursorCol > 7)
-                   cursorCol = 0;
-                 if(!Disp8x8.get(cursorCol, 0))
-                   break;
-               }
-               Disp8x8.set(cursorCol, 0, DISP_GREEN);
-             }
-             break;
-
-        case EV_TIMER_1: // TIMER1 FLASHES CURSOR
-            flashCursor++;
-            Disp8x8.set(cursorCol, 0, (flashCursor&3)? DISP_GREEN : DISP_YELLOW);
-            break;
-        case EV_TIMER_2: // TIMER FOR DROPPING PLAYER COUNTER        
-            if(placeRow == 7 || Disp8x8.get(placeCol, placeRow+1))
-            {
-              Timer2Period = 0;
-              if(placeForCPU)
-              {
-                Timer1Period = TIMER1PERIOD;
-              }
-              else
-              {
-                cpuMove();
-              }
+              cpuMap[dropRow] |= (1<<(7-dropCol));
             }
             else
             {
-              Disp8x8.set(placeCol, placeRow, DISP_OFF);              
-              placeRow++;
-              Disp8x8.set(placeCol, placeRow, placeForCPU? DISP_RED : DISP_GREEN);              
+              playerMap[dropRow] |= (1<<(7-dropCol));
             }
-            break;
+            Timer2Period = 0;
+            checkForWin(dropCol, dropRow, dropType);
+          }
+          else
+          {
+            dropRow = nextRow;
+          }
+        }
       }
-      
+      else
+      {
+        switch(event)
+        {
+            case EV_PRESS_B: // CURSOR LEFT
+              if(--playerPos < 0) playerPos=7;
+               break;
+            case EV_PRESS_D: // CURSOR RIGHT
+              if(++playerPos > 7) playerPos=0;
+               break;
+               
+            case EV_PRESS_C: // DROP
+               if((playerMap[0] & (1<<(7-playerPos))) || (cpuMap[0] & (1<<(7-playerPos))))
+               {
+                 playSound(20,250);
+                 break; // cant drop if the column is full!
+               }
+                 
+               // start a counter drop
+               dropRow = 0;
+               dropCol = playerPos;
+               dropType = 0;
+               Timer2Period = TIMER2PERIOD;
+               break;
+            case EV_PRESS_A:
+               break;      
+  
+            // TIMER 1 - BLINK THE CURSOR             
+            case EV_TIMER_1:
+              playerBlink = !playerBlink;        
+        }               
+        if(playerBlink)
+          Disp8x8.set(playerPos,0,DISP_YELLOW);
+      }
+
     }
 };
 
