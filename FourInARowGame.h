@@ -9,8 +9,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define TIMER1PERIOD 100
-#define TIMER2PERIOD 50
+#define TIMER1PERIOD 200 // cursor flash rate
+#define TIMER2PERIOD 50 // counter drop speed
 class CFourInARowGame : public CGame 
 {
   public:
@@ -36,8 +36,6 @@ class CFourInARowGame : public CGame
       
     }    
 
-char tdir;
-char tpos;
     char dropRow;
     char dropCol;
     char dropType;
@@ -54,52 +52,11 @@ char tpos;
       memset(playerMap, 0, 8);
       memset(cpuMap, 0, 8);
       memset(pathMap, 0, 8);
-      tdir = 0; 
-      tpos = 0;
-      Timer1Period = 200;
-    }
-    
-     
-/*
-            X             X             X             X
-      0b00000000    0b00000000    0b00000000    0b00000000
-      0b00000000    0b00000000    0b00000000    0b00000000
-      0b00000000    0b00000000    0b00000000    0b00000000
-     Y0b00001111   Y0b00011110   Y0b00111100   Y0b01111000
-      0b00000000    0b00000000    0b00000000    0b00000000
-      0b00000000    0b00000000    0b00000000    0b00000000
-      0b00000000    0b00000000    0b00000000    0b00000000
-      
-            X             X             X             X
-      0b00000000    0b00000000    0b00000000    0b00001000
-      0b00000000    0b00000000    0b00001000    0b00001000
-      0b00000000    0b00001000    0b00001000    0b00001000
-     Y0b00001000   Y0b00001000   Y0b00001000   Y0b00001000
-      0b00001000    0b00001000    0b00001000    0b00000000
-      0b00001000    0b00001000    0b00000000    0b00000000
-      0b00001000    0b00000000    0b00000000    0b00000000
-      
-            X             X             X             X
-      0b00000000    0b00000000    0b00000000    0b01000000
-      0b00000000    0b00000000    0b00100000    0b00100000
-      0b00000000    0b00010000    0b00010000    0b00010000
-     Y0b00001000   Y0b00001000   Y0b00001000   Y0b00001000
-      0b00000100    0b00000100    0b00000100    0b00000000
-      0b00000010    0b00000010    0b00000000    0b00000000
-      0b00000001    0b00000000    0b00000000    0b00000000
+      Timer1Period = TIMER1PERIOD;
+      Timer2Period = 0;      
+    }      
 
-            X             X             X             X
-      0b00000000    0b00000000    0b00000000    0b00000001
-      0b00000000    0b00000000    0b00000010    0b00000010
-      0b00000000    0b00000100    0b00000100    0b00000100
-     Y0b00001000   Y0b00001000   Y0b00001000   Y0b00001000
-      0b00010000    0b00010000    0b00010000    0b00000000
-      0b00100000    0b00100000    0b00000000    0b00000000
-      0b01000000    0b00000000    0b00000000    0b00000000
-      
-*/      
-      
-
+      /////////////////////////////////////////////////////////////////////////////////////
       // Populate the "path map" for one of 16 paths (each 4 positions long) placed at
       // any position on the grid. Return 0 if cannot fit the path at this position
       byte loadPathMap(byte col, byte row, byte whichPath)
@@ -143,8 +100,118 @@ char tpos;
         return 1;             
     }
 
-    // check if game is won and display the win (does not
-    // return if a win occurs)
+    /////////////////////////////////////////////////////////////////////////////////////
+    // Count the number of bits in the intersection between a grid and a path
+    inline int countBits(byte a)
+    {  
+      return !!((a)&0x01)+!!(a&0x02)+!!(a&0x04)+!!(a&0x08)+!!(a&0x10)+!!(a&0x20)+!!(a&0x40)+!!(a&0x80);
+    }          
+    int intersect(byte *grid, byte *path)
+    {
+      return 
+        countBits(grid[0] & path[0]) +
+        countBits(grid[1] & path[1]) +
+        countBits(grid[2] & path[2]) +
+        countBits(grid[3] & path[3]) +
+        countBits(grid[4] & path[4]) +
+        countBits(grid[5] & path[5]) +
+        countBits(grid[6] & path[6]) +
+        countBits(grid[7] & path[7]);
+    }
+    
+    /////////////////////////////////////////////////////////////////////////////////////
+    // Get the weighted score for placing a counter in a given column, depending if 
+    // playing as player or as CPU
+    char getScoreForColumn(byte col, byte row, byte isCPU)
+    {                  
+      // try each path
+      int maxScore = 0;
+      byte *thisGrid = isCPU ? cpuMap : playerMap;
+      byte *otherGrid = isCPU ? playerMap : cpuMap;
+      for(int path=0;path<16;++path)
+      {
+        if(!loadPathMap(col,row,path))
+          continue; // path does not fit here
+          
+        // check path against player counters and cpu counters
+        int mine = intersect(thisGrid, pathMap);
+        int yours = intersect(otherGrid, pathMap);
+        if(mine >= 3) // would win
+          return 200;
+        if(yours >= 3) // blocking other player from a win
+          return 100;
+        if(mine > maxScore && yours == 0) // worth going here?
+          maxScore = mine;
+      }
+      return maxScore;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+    // The AI for the CPU to make a move    
+    char selectCPUColumn()
+    {
+      int col;
+      char score[8];      
+      for(col=0; col<8; ++col)
+      {        
+        // check if column is full
+        byte m = 1<<(7-col);
+        if(!!(playerMap[0]&m)||!!(cpuMap[0]&m))
+        {
+          score[col]=-2;
+          continue;
+        }
+        
+        // get row position where counter would fall
+        int row;
+        for(row=0;row<7;++row)
+          if(!!(playerMap[row+1]&m) || !!(cpuMap[row+1]&m))
+            break;
+        
+        // how much would we like to go here?
+        char forPlace = getScoreForColumn(col, row, true);         
+        if(forPlace > 3)
+        {
+          // winning or blocking a win always trumps other scores
+          score[col] = forPlace;
+        }
+        else
+        {
+          // can other player win my putting a counter on top of ours?
+          if(row>0 && getScoreForColumn(col, row-1, false) == 100)
+          {
+            // we do not want to go here!
+            score[col] = -1; 
+          }
+          else
+          {                    
+            // score position based on how much it benefits us and
+            // how much it disadvantages the other player
+            char forBlock = getScoreForColumn(col, row, false);
+            score[col] = forBlock + forPlace;                         
+          }
+        }
+      }
+      
+      // whats the max score?
+      int maxScore = -1;
+      for(col=0;col<8;++col)
+        maxScore = max(score[col], maxScore);
+        
+      // select a column with max score at random
+      col = random(8);
+      for(int i=0;i<8;++i)
+      {
+        if(score[col] == maxScore)
+          break;
+        col = (col+1)%8;
+      }
+      return col;
+    }          
+    
+    /////////////////////////////////////////////////////////////////////////////////////
+    // check if game is won or grid is full. Display winning line (method does not
+    // return if game is over)
     void checkForWin(byte col, byte row, byte isCpu)
     {
       int i;
@@ -168,10 +235,12 @@ char tpos;
           }
         }
         
+        // did we find a win?
         if(win)
         {
           if(isCpu)
           {
+            // CPU won.. boo!
             for(i=10;i>0;--i)
             {
               playSound(200+50*i, 60);
@@ -180,6 +249,7 @@ char tpos;
           }
           else
           {
+            // player won.. woop!
             for(i=0;i<10;++i)
             {
               playSound(200+50*i, 60);
@@ -187,6 +257,7 @@ char tpos;
             }
           }
           
+          // Infinite loop displays the winning path
           byte toggle = 0;
           for(;;)
           {
@@ -206,12 +277,23 @@ char tpos;
             toggle=!toggle;
           }
         }
-      }      
+      } 
+      
+      // if the grid is full we go into
+      // and infinite loop
+      if((playerMap[0]|cpuMap[0])==0xff)
+      {
+        playSound(300, 500);
+        for(;;) Disp8x8.refresh();
+      }
     }
     
+    /////////////////////////////////////////////////////////////////////////////////////
+    // Event handling
     void handleEvent(char event)
     {
-      
+  
+      // load grids to display      
       memcpy(Disp8x8.green, playerMap, 8);
       memcpy(Disp8x8.red, cpuMap, 8);
       
@@ -223,22 +305,37 @@ char tpos;
           playSound(400+ dropRow * 200, 2);
           Disp8x8.set(dropCol,dropRow,dropType? DISP_RED : DISP_GREEN);
           int nextRow = dropRow + 1;
+          
+          // did we get to end of drop?
           if(nextRow > 7 || ((playerMap[nextRow] & (1<<(7-dropCol))) || (cpuMap[nextRow] & (1<<(7-dropCol)))))
           {
-            Timer2Period = 0;
-            if(dropType) // CPU
-            {
+            // place counter in grid
+            if(dropType) 
               cpuMap[dropRow] |= (1<<(7-dropCol));
+            else
+              playerMap[dropRow] |= (1<<(7-dropCol));
+              
+            // see if game is over
+            checkForWin(dropCol, dropRow, dropType);
+
+            // whose goes next?
+            if(dropType)
+            {
+              // back to player
+              Timer2Period = 0;
+              dropType = 0; 
             }
             else
             {
-              playerMap[dropRow] |= (1<<(7-dropCol));
+              // over to CPU
+              dropCol = selectCPUColumn();
+              dropRow = 0;
+              dropType = 1;
             }
-            Timer2Period = 0;
-            checkForWin(dropCol, dropRow, dropType);
           }
           else
           {
+            // still dropping
             dropRow = nextRow;
           }
         }
@@ -259,25 +356,22 @@ char tpos;
                {
                  playSound(20,250);
                  break; // cant drop if the column is full!
-               }
-                 
-               // start a counter drop
+               }                 
                dropRow = 0;
                dropCol = playerPos;
                dropType = 0;
                Timer2Period = TIMER2PERIOD;
                break;
-            case EV_PRESS_A:
-               break;      
   
             // TIMER 1 - BLINK THE CURSOR             
             case EV_TIMER_1:
               playerBlink = !playerBlink;        
         }               
+        
+        // blink cursor
         if(playerBlink)
           Disp8x8.set(playerPos,0,DISP_YELLOW);
       }
-
     }
 };
 

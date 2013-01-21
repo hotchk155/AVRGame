@@ -299,7 +299,7 @@ void loop()
   // number entropy
   if(firstButtonPress)
   {
-    if(digitalRead(P_BUTA) == LOW || digitalRead(P_BUTB) == LOW || digitalRead(P_BUTC) == LOW || digitalRead(P_BUTD))
+    if(digitalRead(P_BUTA) == LOW || digitalRead(P_BUTB) == LOW || digitalRead(P_BUTC) == LOW || digitalRead(P_BUTD) == LOW)
     { 
       randomSeed(milliseconds);
       firstButtonPress = 0;
