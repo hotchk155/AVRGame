@@ -61,8 +61,7 @@ void getMenuIcon(int which, byte *dst)
     case 0: CInvadersGame::getGameIcon(dst); break;
     case 1: CBlocksGame::getGameIcon(dst); break;
     case 2: CBreakoutGame::getGameIcon(dst); break;
-    case 3: CPongGame::getGameIcon(dst); break;
-    case 4: CFourInARowGame::getGameIcon(dst); break;
+    case 3: CFourInARowGame::getGameIcon(dst); break;
     // END LIST OF GAMES
     
     default: CMenu::getGameIcon(dst); break; // Last item is the sound toggle
@@ -81,8 +80,7 @@ void startGame(int which)
     case 0: pGame = new CInvadersGame(); break;
     case 1: pGame = new CBlocksGame(); break;
     case 2: pGame = new CBreakoutGame(); break;
-    case 3: pGame = new CPongGame(); break;
-    case 4: pGame = new CFourInARowGame(); break;
+    case 3: pGame = new CFourInARowGame(); break;
     // END LIST OF GAMES
     
     default: pGame =new CMenu(); which = NUM_GAMES; break;

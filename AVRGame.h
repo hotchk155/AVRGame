@@ -6,7 +6,7 @@
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
-#define NUM_GAMES 5 // change this number to have move games in the menu
+#define NUM_GAMES 4 // change this number to have move games in the menu
 
 // define the pins for the matrix columns
 #define P_COL7  14
@@ -151,12 +151,13 @@ public:
     return (red[row]&(1<<(7-pos%8))? DISP_RED : 0) |
           (green[row]&(1<<(7-pos%8))? DISP_GREEN : 0);
   }
-  
+
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // refresh
   // Refresh the display matrix. This function must be called repeatedly for the display to work
   void refresh()
   {
+    digitalWrite(P_OE,  LOW);    
     digitalWrite(P_CLK, LOW);
     digitalWrite(P_DAT, HIGH);
     digitalWrite(P_CLK, HIGH);
@@ -211,6 +212,16 @@ public:
       
       delayMicroseconds(100);
     }
+    
+    digitalWrite(P_COL0, LOW);
+    digitalWrite(P_COL1, LOW);
+    digitalWrite(P_COL2, LOW);
+    digitalWrite(P_COL3, LOW);
+    digitalWrite(P_COL4, LOW);
+    digitalWrite(P_COL5, LOW);
+    digitalWrite(P_COL6, LOW);
+    digitalWrite(P_COL7, LOW);
+
   }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
