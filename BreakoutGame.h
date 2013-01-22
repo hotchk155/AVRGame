@@ -34,7 +34,9 @@ class CBreakoutGame : public CGame
       dst[15] = 0b00000000;          
       
     }    
-    
+
+    char countdown;    
+    char lives;
     char playerX;
     char ballX;
     char ballY;
@@ -45,25 +47,36 @@ class CBreakoutGame : public CGame
     int level;
     void init()
     {
+      lives = 3;
       level = 0;
       Timer1Period = 200;
       newLevel();
     }
     void newLevel()
     {
-      playerX = 3;              
+      level++;
       memset(blocks,0,8);
       blocks[0]=0xff;
       blocks[1]=0xff;
       blocks[2]=0xff;
+      if(level>2)
+        blocks[3]=0xff;
+      if(level>5)
+        blocks[4]=0xff;
+      newBall();
+    }
+    void newBall()
+    {
+      playerX = 3;              
       ballX = 3;
       ballY = 6;
       ballDX = 0;
-      ballDY = -1;
+      ballDY = 0;
       ballSpeed = 100 - 5*level;
       if(ballSpeed < 30)
         ballSpeed = 30;
-      level++;
+      countdown = 3;
+      Timer2Period = 400;
     }
     
     void handleEvent(char event)
@@ -83,6 +96,7 @@ class CBreakoutGame : public CGame
     // 7 3 
     // 654 
         case EV_TIMER_1:
+          Disp8x8.set(ballX, ballY, DISP_OFF);        
           for(;;)
           {
             int nx = ballX + ballDX;
@@ -134,18 +148,28 @@ class CBreakoutGame : public CGame
               else
               {
                 // died
-                Disp8x8.set(ballX, ballY, DISP_OFF);
                 Disp8x8.set(nx, ny, DISP_YELLOW);
                 for(i=10;i>0;--i)
                 {
                   playSound(200+50*i, 60);
                   Disp8x8.delayWithRefresh(10);
                 }
-                endGame();
+                if(!lives--)
+                {
+                  endGame();
+                }
+                else
+                {
+                  Disp8x8.delayWithRefresh(500);
+                  newBall();
+                  break;
+                }                            
               }
             }                
+            
             ballX=nx;
             ballY=ny;
+            Disp8x8.set(nx, ny, DISP_YELLOW);
             if(blocks[ny]&(1<<(7-nx)))
             {
               gameScore += 10 * level;
@@ -160,14 +184,31 @@ class CBreakoutGame : public CGame
                   Disp8x8.delayWithRefresh(10);
                 }
                 gameScore += 1000;
+                Disp8x8.delayWithRefresh(100);
                 newLevel();
               }
             }
             break;
           }
           // slower with diagonal movement
-          Timer1Period = (!ballDX || !ballDY)? ballSpeed : (ballSpeed*1.5);
+          Timer1Period = (!ballDX || !ballDY)? ballSpeed : (ballSpeed*1.7);
           break;        
+          
+        case EV_TIMER_2: // COUNTDOWN BEFORE PLAY BEGINS
+          if(countdown)
+          {
+            playSound(1000,10);
+            countdown--;
+          }
+          else
+          {
+            playSound(1000,50);
+            Timer2Period = 0;
+            ballDY=-1;
+          }
+          break;
+          
+          
       }
       
       memcpy(Disp8x8.red,blocks,8);

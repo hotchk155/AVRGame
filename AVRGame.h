@@ -51,6 +51,7 @@
 // events passed to game handers
 enum {
   EV_START    = 1,
+  EV_DISPLAY,
   EV_PRESS_A,
   EV_PRESS_B,
   EV_PRESS_C,

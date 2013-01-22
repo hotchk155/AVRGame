@@ -17,9 +17,7 @@
 
 // Include all game headers here
 #include "InvadersGame.h"
-#include "LanderGame.h"
 #include "BreakoutGame.h"
-#include "PongGame.h"
 #include "BlocksGame.h"
 #include "FourInARowGame.h"
 
