@@ -123,13 +123,10 @@ class CBlocksGame : public CGame
   byte placeRow;
   byte gridMap[8];
   byte shadowMap[8];
-//  byte pieceMap[4];
   byte flashShadow;
-  byte isDropped;
   
     void init()
     {
-      isDropped = 0;
       flashShadow = 0;
       placeCol = 1;
       placePiece = PIECE_T;
@@ -147,7 +144,6 @@ class CBlocksGame : public CGame
       placeDir = random(4);
       movePiece(0,0);
       Timer1Period = 150; // flash shadow map
-      isDropped = 0;
     }
     
     byte movePiece(char dr, char dx)
@@ -225,145 +221,19 @@ JUST_GET_OUT_OF_ALL_THESE_LOOPS_ALREADY: //imho a reasonable use of a goto :)
       }
     }         
 
-
-    byte movePieceDropped(char dr, char dx)
-    {
-      byte pm[4];
-      int row, i;
-      char newCol = constrain(placeCol + dx,0,7);
-      char newDir = placeDir;
-      for(byte attempt = 0; attempt < 4; ++attempt)
-      {
-        newDir += dr;
-        if(newDir < DIR_0) 
-          newDir = DIR_270;
-        else if(newDir > DIR_270) 
-          newDir = DIR_0;
-          
-        memset(pm, 0, 4);
-        mapPiece(placePiece, newDir, pm);
-        pm[0] >>= newCol;
-        pm[1] >>= newCol;
-        pm[2] >>= newCol;
-        pm[3] >>= newCol;
-        
-        // outside play area on left        
-        if((pm[0] & 0x80)||(pm[1] & 0x80)||(pm[2] & 0x80)||(pm[3] & 0x80))
-          continue;
-        // outside play are to right?
-        else if((pm[0] & 0x01)||(pm[1] & 0x01)||(pm[2] & 0x01)||(pm[3] & 0x01))
-          continue;
-        // outside play area to bottom
-        else if((placeRow>6)||(placeRow>5 && pm[2])||(placeRow>4 && pm[3])||(placeRow>3 && pm[4]))
-          continue;
-        // collision
-        else if((pm[0]&gridMap[placeRow])||(pm[1]&gridMap[placeRow+1])||(pm[2]&gridMap[placeRow+2])||(pm[3]&gridMap[placeRow+3]))
-          continue;
-        else
-        {
-          placeDir = newDir;
-          placeCol = newCol;
-          memset(shadowMap,0,sizeof shadowMap);
-          for(i=0;i<4;++i)
-          {
-            int r = placeRow + i;
-            if(r >= 0 && r < 8)        
-              shadowMap[r] = pm[i];
-          }
-          return 1;
-        }
-      }      
-      return 0;
-    }         
-
-/*
-    byte movePiece(char dr, char dx)
-    {
-      char newDir = placeDir + dr;
-      if(newDir < DIR_0) 
-        newDir = DIR_270;
-      else if(newDir > DIR_270) 
-        newDir = DIR_0;
-      char newCol = constrain(placeCol + dx,0,7);
-      for(byte attempt = 0; attempt < 4; ++attempt)
-      {
-        
-        byte pm[4];
-        memset(pm, 0, 4);
-        mapPiece(placePiece, newDir, pm);
-        pm[0] >>= newCol;
-        pm[1] >>= newCol;
-        pm[2] >>= newCol;
-        pm[3] >>= newCol;
-        
-        // outside play area on left        
-        if((pm[0] & 0x80)||(pm[1] & 0x80)||(pm[2] & 0x80)||(pm[3] & 0x80))
-        {
-          newCol++; // otherwise must move to right
-          continue;
-        }
-        // outside play are to right?
-        else if((pm[0] & 0x01)||(pm[1] & 0x01)||(pm[2] & 0x01)||(pm[3] & 0x01))
-        {
-          newCol--; // otherwise must move to left
-          continue;
-        }
-          
-        // we're done
-        memcpy(pieceMap, pm, 4);
-        placeDir = newDir;
-        placeCol = newCol;
-        return 1;
-      }        
-      return 0;
-    }
-
-    void setShadowMap()
-    {
-      int row, i;
-      
-      
-      // scan down looking for first collision
-      // betweem the piecemap and the gridmap
-      for(row=-3;row<8;++row)
-      {
-        // piecemap is 4 rows high
-        for(i=0;i<4;++i)
-        {
-          // calc gridmap row corresponding
-          // to the piecemap row and ensure
-          // it is valid on grid
-          int r = row + i;
-          if(r >= 0 && r < 8)        
-          {
-            if(pieceMap[i] && (r == 7)) // resting on bottom row
-              goto JUST_GET_OUT_OF_ALL_THESE_LOOPS_ALREADY;
-            if(r<7 && !!(pieceMap[i] & gridMap[r+1])) // bitwise collision
-              goto JUST_GET_OUT_OF_ALL_THESE_LOOPS_ALREADY;
-          }
-        }        
-      }
-
-JUST_GET_OUT_OF_ALL_THESE_LOOPS_ALREADY: //imho a reasonable use of a goto :)
-
-      // now store the offset data as shadow map
-      shadowMapTopRow = row;
-      memset(shadowMap,0,sizeof shadowMap);
-      for(i=0;i<4;++i)
-      {
-        int r = row + i;
-        if(r >= 0 && r < 8)        
-          shadowMap[r] = pieceMap[i];
-      }
-    } 
-*/    
     void lockPieceInPlace()
     {
       int i,j;     
       for(int i=0;i<8;++i)
         gridMap[i] |= shadowMap[i];
-       
+
+      playSound(500,100);       
+      Disp8x8.delayWithRefresh(50);
+      gameScore += 10;
+      
       // look for full rows we can remove
+      byte count = 0;
+      int bonus = 100;
       byte again = 1;
       while(again)
       { 
@@ -372,14 +242,18 @@ JUST_GET_OUT_OF_ALL_THESE_LOOPS_ALREADY: //imho a reasonable use of a goto :)
         {
           if(gridMap[i] == 0x7e)
           {
+            count++;
             Disp8x8.red[i] = 0xff;
             Disp8x8.green[i] = 0x7e;
+            playSound(500+200*count,100);    
+            gameScore += bonus;
+            bonus *= 2;
             Disp8x8.delayWithRefresh(100);
             Disp8x8.red[i] = 0x81;
             for(j=i;j>0;--j)
               gridMap[j] = gridMap[j-1];              
             gridMap[0] = 0;
-            memcpy(Disp8x8.green, gridMap,8);
+            memcpy(Disp8x8.green, gridMap,8);            
             again = 1;
             break;
           }
@@ -396,18 +270,15 @@ JUST_GET_OUT_OF_ALL_THESE_LOOPS_ALREADY: //imho a reasonable use of a goto :)
       switch(event)
       {
         case EV_PRESS_B://left
-          isDropped? movePieceDropped(0,-1) : movePiece(0,-1);
+          movePiece(0,-1);
           break;
         case EV_PRESS_D://right
-          isDropped? movePieceDropped(0,+1) : movePiece(0,+1);
+          movePiece(0,+1);
           break;
         case EV_PRESS_A:
-          isDropped? movePieceDropped(1,0) : movePiece(1,0);//rotate
+          movePiece(1,0);//rotate
           break;
         case EV_PRESS_C:
-          isDropped = 1;
-          break;
-        case EV_RELEASE_C:
           lockPieceInPlace();
           break;
         case EV_TIMER_1: //FLASH SHADOW MAP
@@ -419,7 +290,7 @@ JUST_GET_OUT_OF_ALL_THESE_LOOPS_ALREADY: //imho a reasonable use of a goto :)
       {  
         Disp8x8.green[i] = gridMap[i];
         Disp8x8.red[i] = 0x81|shadowMap[i];
-        if(!isDropped && flashShadow)
+        if(flashShadow)
           Disp8x8.green[i] |= shadowMap[i];
       }         
     }        
