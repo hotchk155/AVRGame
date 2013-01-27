@@ -32,7 +32,8 @@ class CInvadersGame : public CGame
   public:
     static void getGameIcon(byte *dst, byte count)
     {
-      dst[ 2] = 0b00100100;          
+      if(count & 0x3f)//sinister blinking
+        dst[ 2] = 0b00100100;          
       dst[ 9] = 0b00111100;
       dst[10] = 0b01011010;
       dst[11] = 0b01111110;
