@@ -13,8 +13,9 @@ class CMenu : public CGame
 {
     char sel;
     char offset;
+    char count;
   public:  
-    static void getGameIcon(byte *dst)
+    static void getGameIcon(byte *dst, byte count)
     {
       if(!isSoundOn())
       {
@@ -40,18 +41,19 @@ class CMenu : public CGame
     {
       sel = 0;
       offset = 0;
-      showIcon(0);
+      showIcon(0, false);
+      Timer3Period = 100;
     }
    
-    void showIcon(int ofs)
+    void showIcon(int ofs, byte count)
     {
       byte left[16];
       byte right[16];
-      getMenuIcon(sel,left);
+      getMenuIcon(sel,left,count);
       if(sel < MENU_SIZE-1)
-        getMenuIcon(sel+1, right);
+        getMenuIcon(sel+1, right, count);
       else
-        getMenuIcon(0, right);      
+        getMenuIcon(0, right, count);      
       for(int i=0;i<8;++i) 
       {
         Disp8x8.red[i] = (left[i]<<ofs) | right[i]>>(8-ofs);
@@ -102,8 +104,11 @@ class CMenu : public CGame
             Timer2Period = 0;
           }
           break;
+        case EV_TIMER_3:
+          count++;
+          break;
       }
-      showIcon(offset);
+      showIcon(offset, count);
     }
 };
 

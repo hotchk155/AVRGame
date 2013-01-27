@@ -30,7 +30,7 @@ class CInvadersGame : public CGame
   unsigned long nextShotMove;
   int invaderPeriod;
   public:
-    static void getGameIcon(byte *dst)
+    static void getGameIcon(byte *dst, byte count)
     {
       dst[ 2] = 0b00100100;          
       dst[ 9] = 0b00111100;

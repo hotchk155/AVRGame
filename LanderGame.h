@@ -24,7 +24,7 @@ class CLanderGame : public CGame
   byte flashHorizontal;
   int fuel;
   public:
-    static void getGameIcon(byte *dst)
+    static void getGameIcon(byte *dst, byte count)
     {
         dst[ 0] = 0b00000000;
         dst[ 1] = 0b00000000;

@@ -11,11 +11,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class CBlocksGame : public CGame 
 {
-  byte grid[8];
   
   int count;
   public:
-    static void getGameIcon(byte *dst)
+    static void getGameIcon(byte *dst, byte count)
     {
       dst[ 0] = 0b11110000;          
       dst[ 1] = 0b11110110;          
@@ -121,22 +120,49 @@ class CBlocksGame : public CGame
   byte placePiece;
   byte placeDir;
   byte placeCol;
-  byte gridMap[8];
-  byte shadowMap[8];
+  byte gridMap[16];
+  byte fallingMap[16];
+  byte shadowMap[16];
   byte pieceMap[4];
   byte flashShadow;
+  byte scrollTop;
+  byte shadowMapTopRow;
+  int fallRow;
   
     void init()
     {
+      shadowMapTopRow = 0;
+      scrollTop = 8;
       flashShadow = 0;
       placeCol = 1;
       placePiece = PIECE_T;
       placeDir = DIR_0;
       memset(gridMap,0,sizeof gridMap);
       memset(shadowMap,0,sizeof shadowMap);
+      memset(fallingMap,0,sizeof fallingMap);
       Disp8x8.cls();
-      Timer1Period = 150;
       newPiece();
+    }
+    
+    void newPiece()
+    {
+      placePiece = random(PIECE_MAX);
+      placeCol = random(6);
+      placeDir = random(4);
+      movePiece(0,0);
+      fallRow = 0;
+      for(int i=3;i>0;--i)
+      {
+        if(pieceMap[i])
+        {
+          fallRow = -i;
+          break;
+        }
+      }
+      setShadowMap();
+      setFallingMap();
+      Timer1Period = 150; // flash shadow map
+      Timer2Period = 500; // falling piece
     }
     
     byte movePiece(char dr, char dx)
@@ -171,6 +197,12 @@ class CBlocksGame : public CGame
           continue;
         }
           
+        // see if we're constrained by pieces already on board
+        if(fallRow < 16 && (gridMap[fallRow] & pm[0])) continue;
+        if(fallRow < 15 && (gridMap[fallRow+1] & pm[1])) continue;
+        if(fallRow < 14 && (gridMap[fallRow+2] & pm[2])) continue;
+        if(fallRow < 13 && (gridMap[fallRow+3] & pm[3])) continue;
+                
         // we're done
         memcpy(pieceMap, pm, 4);
         placeDir = newDir;
@@ -180,13 +212,25 @@ class CBlocksGame : public CGame
       return 0;
     }
 
+    byte fallPiece()
+    {
+        if(fallRow < 15 && (gridMap[fallRow+1] & pieceMap[0])) return 0;
+        if(fallRow < 14 && (gridMap[fallRow+2] & pieceMap[1])) return 0;
+        if(fallRow < 13 && (gridMap[fallRow+3] & pieceMap[2])) return 0;
+        if(fallRow < 12 && (gridMap[fallRow+4] & pieceMap[3])) return 0;
+        fallRow++;
+        setFallingMap();
+        return 1;
+    }    
+        
     void setShadowMap()
     {
       int row, i;
       
+      
       // scan down looking for first collision
       // betweem the piecemap and the gridmap
-      for(row=-3;row<8;++row)
+      for(row=-3;row<16;++row)
       {
         // piecemap is 4 rows high
         for(i=0;i<4;++i)
@@ -195,11 +239,11 @@ class CBlocksGame : public CGame
           // to the piecemap row and ensure
           // it is valid on grid
           int r = row + i;
-          if(r >= 0 && r < 8)        
+          if(r >= 0 && r < 16)        
           {
-            if(pieceMap[i] && (r == 7)) // resting on bottom row
+            if(pieceMap[i] && (r == 15)) // resting on bottom row
               goto JUST_GET_OUT_OF_ALL_THESE_LOOPS_ALREADY;
-            if(r<7 && !!(pieceMap[i] & gridMap[r+1])) // bitwise collision
+            if(r<15 && !!(pieceMap[i] & gridMap[r+1])) // bitwise collision
               goto JUST_GET_OUT_OF_ALL_THESE_LOOPS_ALREADY;
           }
         }        
@@ -208,21 +252,38 @@ class CBlocksGame : public CGame
 JUST_GET_OUT_OF_ALL_THESE_LOOPS_ALREADY: //imho a reasonable use of a goto :)
 
       // now store the offset data as shadow map
+      shadowMapTopRow = 16;
       memset(shadowMap,0,sizeof shadowMap);
       for(i=0;i<4;++i)
       {
         int r = row + i;
-        if(r >= 0 && r < 8)        
+        if(r >= 0 && r < 16)        
+        {
+          if(pieceMap[i] && shadowMapTopRow > r)
+            shadowMapTopRow = r;
           shadowMap[r] = pieceMap[i];
+        }
       }
     } 
+
+    void setFallingMap() 
+    {      
+      // set up the falling map
+      memset(fallingMap,0,sizeof fallingMap);
+      for(int i=0;i<4;++i)
+      {
+        int r = fallRow + i;
+        if(r >= 0 && r < 16)        
+          fallingMap[r] = pieceMap[i];
+      }
+    }
 
     void lockPieceInPlace()
     {
       int i,j;
       
 
-      for(int i=0;i<8;++i)
+      for(int i=0;i<16;++i)
         gridMap[i] |= shadowMap[i];
        
       // look for full rows we can remove
@@ -230,38 +291,32 @@ JUST_GET_OUT_OF_ALL_THESE_LOOPS_ALREADY: //imho a reasonable use of a goto :)
       while(again)
       { 
         again=0;
-        for(i=7;i>0;--i)
+        for(i=16;i>0;--i)
         {
           if(gridMap[i] == 0x7e)
           {
-            Disp8x8.red[i] = 0xff;
-            Disp8x8.green[i] = 0x7e;
-            for(j=0;j<100;++j)
-              Disp8x8.refresh();
-            Disp8x8.red[i] = 0x81;
+            byte dispRow = i - scrollTop;
+            if(dispRow >= 0 && dispRow < 8)
+            {
+              Disp8x8.red[dispRow] = 0xff;
+              Disp8x8.green[dispRow] = 0x7e;
+              Disp8x8.delayWithRefresh(100);
+              Disp8x8.red[dispRow] = 0x81;
+            }
             for(j=i;j>0;--j)
               gridMap[j] = gridMap[j-1];              
             gridMap[0] = 0;
-            memcpy(Disp8x8.green, gridMap,8);
+            memcpy(Disp8x8.green, gridMap + scrollTop,8);
             again = 1;
             break;
           }
         }
       }
-      
+                  
       // put another piece into play
       newPiece();
     }
-    
-    void newPiece()
-    {
-      placePiece = random(PIECE_MAX);
-      placeCol = random(6);
-      placeDir = random(4);
-      movePiece(0,0);
-      setShadowMap();
-    }
-    
+        
     void handleEvent(char event)
     {
       int i;
@@ -270,30 +325,42 @@ JUST_GET_OUT_OF_ALL_THESE_LOOPS_ALREADY: //imho a reasonable use of a goto :)
         case EV_PRESS_B://left
           movePiece(0,-1);
           setShadowMap();
+          setFallingMap();
           break;
         case EV_PRESS_D://right
           movePiece(0,+1);
           setShadowMap();
+          setFallingMap();
           break;
         case EV_PRESS_A:
           movePiece(1,0);//rotate
           setShadowMap();
+          setFallingMap();
           break;
         case EV_PRESS_C:
           lockPieceInPlace();
           break;
-        case EV_TIMER_1:
+        case EV_TIMER_1: //FLASH SHADOW MAP
           flashShadow = !flashShadow;
           break;
+        case EV_TIMER_2: //TIME FALLING
+          if(!fallPiece())
+            lockPieceInPlace();
+          break;
       }
-      for(i=0;i<8;++i)
+      
+      scrollTop = min(8,max(0,(int)shadowMapTopRow-2));
+      for(int i=0;i<8;++i)
       {  
-        Disp8x8.green[i] = gridMap[i];
-        Disp8x8.red[i] = 0x81|shadowMap[i];
+        Disp8x8.green[i] = gridMap[scrollTop+i];
+        Disp8x8.red[i] = 0x81|shadowMap[scrollTop+i]|fallingMap[scrollTop+i];
         if(flashShadow)
-          Disp8x8.green[i] |= shadowMap[i];
+          Disp8x8.green[i] |= shadowMap[scrollTop+i];
       }   
-    }
+      
+      // scroll bar
+      Disp8x8.green[scrollTop-1]|=0x01;
+    }        
 };
 
 

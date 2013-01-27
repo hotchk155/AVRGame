@@ -6,7 +6,7 @@
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
-#define NUM_GAMES 4 // change this number to have move games in the menu
+#define NUM_GAMES 5 // change this number to have move games in the menu
 
 // define the pins for the matrix columns
 #define P_COL7  14
@@ -266,8 +266,9 @@ extern unsigned long gameScore;
 inline void playSound(int pitch, int dur);
 extern byte isSoundOn();
 extern void setSoundOn(byte on);
-extern void getMenuIcon(int which, byte *dst);
+extern void getMenuIcon(int which, byte *dst, byte count);
 extern void setNextGame(int which);
 extern void showScore(unsigned long n);
 extern void endGame();
+extern void setTimeOut(byte whichTimer, unsigned long period);
 

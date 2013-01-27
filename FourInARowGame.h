@@ -14,7 +14,7 @@
 class CFourInARowGame : public CGame 
 {
   public:
-    static void getGameIcon(byte *dst)
+    static void getGameIcon(byte *dst, byte count)
     {
       dst[ 0] = 0b00000000;          
       dst[ 1] = 0b00000100;          
@@ -177,7 +177,7 @@ class CFourInARowGame : public CGame
         else
         {
           // can other player win my putting a counter on top of ours?
-          if(row>0 && getScoreForColumn(col, row-1, false) == 100)
+          if(row>0 && getScoreForColumn(col, row-1, false) == 200)
           {
             // we do not want to go here!
             score[col] = -1; 

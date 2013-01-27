@@ -20,6 +20,7 @@
 #include "BreakoutGame.h"
 #include "BlocksGame.h"
 #include "FourInARowGame.h"
+#include "MemoryGame.h"
 
 // Global variables
 CGame *pGame = NULL;
@@ -50,19 +51,20 @@ unsigned int Timer5Period;
 // getMenuIcon
 // Defines the content of the game menu. Any new games need to be hooked into
 // the menu via this function
-void getMenuIcon(int which, byte *dst)
+void getMenuIcon(int which, byte *dst, byte count)
 {
   memset(dst,0,16);
   switch(which)
   {
     // BEGIN LIST OF GAMES
-    case 0: CInvadersGame::getGameIcon(dst); break;
-    case 1: CBlocksGame::getGameIcon(dst); break;
-    case 2: CBreakoutGame::getGameIcon(dst); break;
-    case 3: CFourInARowGame::getGameIcon(dst); break;
+    case 0: CInvadersGame::getGameIcon(dst, count); break;
+    case 1: CBlocksGame::getGameIcon(dst, count); break;
+    case 2: CBreakoutGame::getGameIcon(dst, count); break;
+    case 3: CFourInARowGame::getGameIcon(dst, count); break;
+    case 4: CMemoryGame::getGameIcon(dst, count); break;
     // END LIST OF GAMES
     
-    default: CMenu::getGameIcon(dst); break; // Last item is the sound toggle
+    default: CMenu::getGameIcon(dst, count); break; // Last item is the sound toggle
   }
 }
 
@@ -79,6 +81,7 @@ void startGame(int which)
     case 1: pGame = new CBlocksGame(); break;
     case 2: pGame = new CBreakoutGame(); break;
     case 3: pGame = new CFourInARowGame(); break;
+    case 4: pGame = new CMemoryGame(); break;
     // END LIST OF GAMES
     
     default: pGame =new CMenu(); which = NUM_GAMES; break;
@@ -257,6 +260,22 @@ void endGame()
 }
 
 ///////////////////////////////////////////////////////////////////////////
+// setTimeOut
+// Schedule a "one off" timer event based on current time. Remember to clear
+// timer period afterwards
+void setTimeOut(byte whichTimer, unsigned long period)
+{
+  switch(whichTimer)
+  {
+    case 1: Timer1Period = 3600000; nextTimer1Event = millis() + period; break;
+    case 2: Timer2Period = 3600000; nextTimer2Event = millis() + period; break;
+    case 3: Timer3Period = 3600000; nextTimer3Event = millis() + period; break;
+    case 4: Timer4Period = 3600000; nextTimer4Event = millis() + period; break;
+    case 5: Timer5Period = 3600000; nextTimer5Event = millis() + period; break;
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////
 // setup
 // Arduino "setup" entry point called when the sketch starts
 void setup() 
@@ -312,7 +331,6 @@ void loop()
     }
     else if(milliseconds > menuSelectKeyPressed)
     {
-      speaker.play(1000,20); 
       setNextGame(NUM_GAMES); // select the last game, which is always the menu handler
     }
   }  
