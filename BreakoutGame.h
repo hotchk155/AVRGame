@@ -233,4 +233,4 @@ class CBreakoutGame : public CGame
       Disp8x8.set(ballX, ballY, DISP_YELLOW);
     }
 };
-
+CGameFactoryImpl<CBreakoutGame> BreakoutGame;

@@ -39,9 +39,11 @@ class CMenu : public CGame
     }
     void init()
     {
-      sel = 0;
+      sel = EEPROM.read(EEPROM_GAMESELECTED);
+      if(sel >= numGameFactories)
+        sel = 0;
       offset = 0;
-      showIcon(0, false);
+      showIcon(0, 0);
       Timer3Period = 100;
     }
    
@@ -50,7 +52,7 @@ class CMenu : public CGame
       byte left[16];
       byte right[16];
       getMenuIcon(sel,left,count);
-      if(sel < MENU_SIZE-1)
+      if(sel < numGameFactories-1)
         getMenuIcon(sel+1, right, count);
       else
         getMenuIcon(0, right, count);      
@@ -66,7 +68,7 @@ class CMenu : public CGame
       switch(event)
       {
         case EV_PRESS_C: // toggle
-          if(sel == MENU_SOUND)
+          if(sel == 0)
           {
             setSoundOn(!isSoundOn());
           }
@@ -78,7 +80,7 @@ class CMenu : public CGame
         case EV_PRESS_B: // previous item
           if(!Timer1Period)
           {
-            if(--sel < 0) sel = MENU_SIZE - 1;
+            if(--sel < 0) sel = numGameFactories - 1;
             offset = 7;
             Timer1Period = 50;
           }
@@ -99,7 +101,8 @@ class CMenu : public CGame
         case EV_TIMER_2:
           if(++offset > 7)
           {
-            if(++sel > MENU_SIZE - 1) sel = 0;
+            if(++sel > numGameFactories-1) 
+              sel = 0;
             offset =0;
             Timer2Period = 0;
           }
@@ -111,4 +114,4 @@ class CMenu : public CGame
       showIcon(offset, count);
     }
 };
-
+CGameFactoryImpl<CMenu> Menu;

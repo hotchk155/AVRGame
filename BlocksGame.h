@@ -296,4 +296,4 @@ JUST_GET_OUT_OF_ALL_THESE_LOOPS_ALREADY: //imho a reasonable use of a goto :)
     }        
 };
 
-
+CGameFactoryImpl<CBlocksGame> BlocksGame;

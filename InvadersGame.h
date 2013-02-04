@@ -282,4 +282,4 @@ class CInvadersGame : public CGame
       }     
     }
 };
-
+CGameFactoryImpl<CInvadersGame> InvadersGame;

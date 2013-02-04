@@ -267,4 +267,4 @@ class CMemoryGame : public CGame
       }      
     }
 };
-
+CGameFactoryImpl<CMemoryGame> MemoryGame;

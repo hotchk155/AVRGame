@@ -49,5 +49,5 @@ class CPongGame : public CGame
       }
     }
 };
-
+CGameFactoryImpl<CPongGame> PongGame;
 

@@ -373,5 +373,5 @@ class CFourInARowGame : public CGame
       }
     }
 };
-
+CGameFactoryImpl<CFourInARowGame> FourInARowGame;
 

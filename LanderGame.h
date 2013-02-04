@@ -253,4 +253,4 @@ class CLanderGame : public CGame
         
     }
 };
-
+CGameFactoryImpl<CLanderGame> LanderGame;
