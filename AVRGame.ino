@@ -61,7 +61,7 @@ unsigned int Timer5Period;
 void getMenuIcon(int which, byte *dst, byte count)
 {
   memset(dst,0,16);
-  if(which>numGameFactories)
+  if(which>=numGameFactories)
     which=0;
   gameFactory[which]->getGameIcon(dst, count);
 }
@@ -71,7 +71,7 @@ void getMenuIcon(int which, byte *dst, byte count)
 // Creates an instance of a game class and starts it running
 void startGame(int which)
 {
-  if(which>numGameFactories)
+  if(which>=numGameFactories)
     which=0;
   thisGame = which;
   pGame = gameFactory[thisGame]->createInstance();
