@@ -40,8 +40,8 @@ class CMenu : public CGame
     void init()
     {
       sel = EEPROM.read(EEPROM_GAMESELECTED);
-      if(sel >= numGameFactories)
-        sel = 0;
+      if(sel <= 0 || sel >= numGameFactories)
+        sel = 1;
       offset = 0;
       showIcon(0, 0);
       Timer3Period = 100;
@@ -78,7 +78,7 @@ class CMenu : public CGame
           }
           break;
         case EV_PRESS_B: // previous item
-          if(!Timer1Period)
+          if(!Timer1Period && !Timer2Period)
           {
             if(--sel < 0) sel = numGameFactories - 1;
             offset = 7;
@@ -86,7 +86,7 @@ class CMenu : public CGame
           }
           break;
         case EV_PRESS_D: // next item
-          if(!Timer2Period)
+          if(!Timer1Period && !Timer2Period)
           {
             offset = 0;
             Timer2Period = 50;

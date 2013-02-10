@@ -5,6 +5,11 @@
 //// 
 //// The main sketch file for the AVRGAME project
 //// 
+//// FIRMWARE RELEASES
+//// 
+//// Rev 1.0 27jan13 Initial release
+//// Rev 1.1 10feb13 Bug fixes
+////
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
@@ -69,14 +74,13 @@ void getMenuIcon(int which, byte *dst, byte count)
 ///////////////////////////////////////////////////////////////////////////
 // startGame
 // Creates an instance of a game class and starts it running
-void startGame(int which)
+void startGame(byte which)
 {
   if(which>=numGameFactories)
     which=0;
   thisGame = which;
+  EEPROM.write(EEPROM_GAMESELECTED,thisGame);
   pGame = gameFactory[thisGame]->createInstance();
-  if(thisGame > 0)
-    EEPROM.write(EEPROM_GAMESELECTED,thisGame);
   
   nextTimer1Event = 0;
   nextTimer2Event = 0;
@@ -283,6 +287,7 @@ void setup()
   digitalWrite(P_BUTB, HIGH);
   digitalWrite(P_BUTC, HIGH);
   digitalWrite(P_BUTD, HIGH);
+  digitalWrite(P_LED, HIGH);
   
   // initialise sound handling
   initSound();
