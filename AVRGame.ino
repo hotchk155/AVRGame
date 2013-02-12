@@ -28,6 +28,7 @@
 #include "BreakoutGame.h"
 #include "FourInARowGame.h"
 #include "MemoryGame.h"
+#include "PongGame.h"
 //
 ///////////////////////////////////////////////////////////////////////////
 
@@ -222,8 +223,7 @@ void showScore(unsigned long n)
       else
         Disp8x8.red[j+1] = (b0<<q)|(b1>>(8-q));
     }
-    for(j=0;j<50;++j)
-      Disp8x8.refresh();
+    Disp8x8.delayWithRefresh(100);
   }  
 }
 
@@ -243,9 +243,8 @@ void endGame()
   {
     for(k=0; k<5; ++k)
     {
-      for(j=0;j<100;++j)
-        Disp8x8.refresh();
-      delay(200);
+      Disp8x8.delayWithRefresh(300);
+      delay(300);
     }
     showScore(gameScore);
     memcpy(Disp8x8.red,red,8);
@@ -429,6 +428,7 @@ void loop()
   // currently running game. This is used by the menu
   if(nextGame >= 0)
   {
+    Disp8x8.setBuffer8(NULL);
     delete pGame;
     pGame = NULL;
     startGame(nextGame);

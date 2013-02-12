@@ -10,20 +10,20 @@
 #define MAX_GAMES 8
 
 // define the pins for the matrix columns
-#define P_COL7  14
-#define P_COL6  15
-#define P_COL5  16
-#define P_COL4  17
-#define P_COL3  13
-#define P_COL2  12
-#define P_COL1  11
-#define P_COL0  10
+#define P_COL0  10 //b2
+#define P_COL1  11 //b3
+#define P_COL2  12 //b4
+#define P_COL3  13 //b5
+#define P_COL4  17 //c3
+#define P_COL5  16 //c2
+#define P_COL6  15 //c1
+#define P_COL7  14 //c0
 
 // define the pins for the shift registers
-#define P_CLK   3
+#define P_CLK   3 //d3
 #define P_OE   9
-#define P_DAT   2
-#define P_LED   5
+#define P_DAT   2 //d2
+#define P_LED   5 
 
 // define the pins for speaker and buttons
 #define P_SPK   8
@@ -31,6 +31,17 @@
 #define P_BUTB  19
 #define P_BUTC  6
 #define P_BUTD  7
+
+#define SET_COL0(v) if(v) PORTB|=(1<<2); else PORTB&=~(1<<2)
+#define SET_COL1(v) if(v) PORTB|=(1<<3); else PORTB&=~(1<<3)
+#define SET_COL2(v) if(v) PORTB|=(1<<4); else PORTB&=~(1<<4)
+#define SET_COL3(v) if(v) PORTB|=(1<<5); else PORTB&=~(1<<5)
+#define SET_COL4(v) if(v) PORTC|=(1<<3); else PORTC&=~(1<<3)
+#define SET_COL5(v) if(v) PORTC|=(1<<2); else PORTC&=~(1<<2)
+#define SET_COL6(v) if(v) PORTC|=(1<<1); else PORTC&=~(1<<1)
+#define SET_COL7(v) if(v) PORTC|=(1<<0); else PORTC&=~(1<<0)
+#define SET_CLK(v) if(v) PORTD|=(1<<3); else PORTD&=~(1<<3)
+
 
 // LED colours
 #define DISP_OFF    0
@@ -79,7 +90,9 @@ class Disp8x8Class {
 public:  
   byte red[8];
   byte green[8];
-  
+  byte redDuty;  
+  byte greenDuty;  
+  byte *buffer8;
   Disp8x8Class() {
     pinMode(P_COL0, OUTPUT);
     pinMode(P_COL1, OUTPUT);
@@ -93,8 +106,13 @@ public:
     pinMode(P_OE, OUTPUT);
     pinMode(P_DAT, OUTPUT);
     digitalWrite(P_OE, LOW);    
+    buffer8 = NULL;
+    redDuty = 255;
+    greenDuty = 255;
     cls();
   }
+  
+  
   
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // cls
@@ -103,13 +121,15 @@ public:
   {
     memset(red,0,8);
     memset(green,0,8);
+    if(buffer8)
+      memset(buffer8, 0, 64);
   }
   
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // set
   // Set a pixel colour
   void set(byte col, byte row, byte colour)
-  {
+  {    
     switch(colour)
     {
       case DISP_OFF:
@@ -151,6 +171,33 @@ public:
   }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // setBuffer8
+  // Associate a 64 byte colour buffer with the display for 8-bit colour mode
+  void setBuffer8(byte *buf)
+  {
+    buffer8 = buf;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // set8
+  // Set 8-bit pixel colour
+  void set8(byte col, byte row, byte colour)
+  {
+    if(buffer8)
+      buffer8[(col&0x7f)+((row&0x7f)<<3)] = colour;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // set8
+  // Get 8-bit pixel colour
+  byte get8(byte col, byte row, byte colour)
+  {
+    if(buffer8)
+      return buffer8[(col&0x7f)|((row&0x7f)<<3)];
+    return 0;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // refresh
   // Refresh the display matrix. This function must be called repeatedly for the display to work
   void refresh()
@@ -162,64 +209,98 @@ public:
     digitalWrite(P_DAT, LOW);
   
     for(int i=0; i<16; ++i)
-    {
-      digitalWrite(P_CLK, LOW);
-      byte d;
-      
+    {      
       // Note that this switch statement maps the shift register bits to 
       // the actual row position and colour. It depends on the specific 
       // wiring of the circuit board 
-      switch(i) 
+      byte d0, d1, d2, d3, d4, d5, d6, d7;
+      if(buffer8)
       {
-        case 0: d = red[4]; break;
-        case 1: d = red[5]; break;
-        case 2: d = red[6]; break;
-        case 3: d = green[7]; break;
-        case 4: d = red[7]; break;
-        case 5: d = green[6]; break;
-        case 6: d = green[5]; break;
-        case 7: d = green[4]; break;
-        case 8: d = green[0]; break;
-        case 9: d = green[1]; break;
-        case 10: d = red[2]; break;
-        case 11: d = red[3]; break;
-        case 12: d = green[3]; break;
-        case 13: d = green[2]; break;
-        case 14: d = red[1]; break;
-        case 15: d = red[0]; break;
+        byte leftShift, *p;
+        switch(i) 
+        {//4 for red
+          case 0: p = &buffer8[8*4]; leftShift=4; break;
+          case 1: p = &buffer8[8*5]; leftShift=4; break;
+          case 2: p = &buffer8[8*6]; leftShift=4; break;
+          case 3: p = &buffer8[8*7]; leftShift=0; break;
+          case 4: p = &buffer8[8*7]; leftShift=4; break;
+          case 5: p = &buffer8[8*6]; leftShift=0; break;
+          case 6: p = &buffer8[8*5]; leftShift=0; break;
+          case 7: p = &buffer8[8*4]; leftShift=0; break;
+          case 8: p = &buffer8[8*0]; leftShift=0; break;
+          case 9: p = &buffer8[8*1]; leftShift=0; break;
+          case 10: p = &buffer8[8*2]; leftShift=4; break;
+          case 11: p = &buffer8[8*3]; leftShift=4; break;
+          case 12: p = &buffer8[8*3]; leftShift=0; break;
+          case 13: p = &buffer8[8*2]; leftShift=0; break;
+          case 14: p = &buffer8[8*1]; leftShift=4; break;
+          case 15: p = &buffer8[8*0]; leftShift=4; break;
+        }
+        
+        d0=(p[0]<<leftShift)&0xf0;
+        d1=(p[1]<<leftShift)&0xf0;
+        d2=(p[2]<<leftShift)&0xf0;
+        d3=(p[3]<<leftShift)&0xf0;
+        d4=(p[4]<<leftShift)&0xf0;
+        d5=(p[5]<<leftShift)&0xf0;
+        d6=(p[6]<<leftShift)&0xf0;
+        d7=(p[7]<<leftShift)&0xf0;
       }
-      digitalWrite(P_COL0, LOW);
-      digitalWrite(P_COL1, LOW);
-      digitalWrite(P_COL2, LOW);
-      digitalWrite(P_COL3, LOW);
-      digitalWrite(P_COL4, LOW);
-      digitalWrite(P_COL5, LOW);
-      digitalWrite(P_COL6, LOW);
-      digitalWrite(P_COL7, LOW);
-  
-      digitalWrite(P_CLK, HIGH);
-  
-      digitalWrite(P_COL0, !!(d&1));
-      digitalWrite(P_COL1, !!(d&2));
-      digitalWrite(P_COL2, !!(d&4));
-      digitalWrite(P_COL3, !!(d&8));
-      digitalWrite(P_COL4, !!(d&16));
-      digitalWrite(P_COL5, !!(d&32));
-      digitalWrite(P_COL6, !!(d&64));
-      digitalWrite(P_COL7, !!(d&128));
+      else
+      {
+        byte d,duty;
+        switch(i) 
+        {
+          case 0: d = red[4]; duty=redDuty; break;
+          case 1: d = red[5]; duty=redDuty; break;
+          case 2: d = red[6]; duty=redDuty; break;
+          case 3: d = green[7]; duty=greenDuty; break;
+          case 4: d = red[7]; duty=redDuty; break;
+          case 5: d = green[6]; duty=greenDuty; break;
+          case 6: d = green[5]; duty=greenDuty; break;
+          case 7: d = green[4]; duty=greenDuty; break;
+          case 8: d = green[0]; duty=greenDuty; break;
+          case 9: d = green[1]; duty=greenDuty; break;
+          case 10: d = red[2]; duty=redDuty; break;
+          case 11: d = red[3]; duty=redDuty; break;
+          case 12: d = green[3]; duty=greenDuty; break;
+          case 13: d = green[2]; duty=greenDuty; break;
+          case 14: d = red[1]; duty=redDuty; break;
+          case 15: d = red[0]; duty=redDuty; break;
+        }
+        d0 = (d&0x01)? duty:0;
+        d1 = (d&0x02)? duty:0;
+        d2 = (d&0x04)? duty:0;
+        d3 = (d&0x08)? duty:0;
+        d4 = (d&0x10)? duty:0;
+        d5 = (d&0x20)? duty:0;
+        d6 = (d&0x40)? duty:0;
+        d7 = (d&0x80)? duty:0;
+      }
       
-      delayMicroseconds(100);
-    }
-    
-    digitalWrite(P_COL0, LOW);
-    digitalWrite(P_COL1, LOW);
-    digitalWrite(P_COL2, LOW);
-    digitalWrite(P_COL3, LOW);
-    digitalWrite(P_COL4, LOW);
-    digitalWrite(P_COL5, LOW);
-    digitalWrite(P_COL6, LOW);
-    digitalWrite(P_COL7, LOW);
+      SET_CLK(0);
+      
+      SET_COL0(0); SET_COL1(0); SET_COL2(0); SET_COL3(0);
+      SET_COL4(0); SET_COL5(0); SET_COL6(0); SET_COL7(0);
+  
+      SET_CLK(1);
 
+      SET_COL0(d0); SET_COL1(d1); SET_COL2(d2); SET_COL3(d3);
+      SET_COL4(d4); SET_COL5(d5); SET_COL6(d6); SET_COL7(d7);
+      
+      byte z=0;
+      while(++z) {
+//        delayMicroseconds(1);
+        if(z==d0) SET_COL0(0);
+        if(z==d1) SET_COL1(0);
+        if(z==d2) SET_COL2(0);
+        if(z==d3) SET_COL3(0);
+        if(z==d4) SET_COL4(0);
+        if(z==d5) SET_COL5(0);
+        if(z==d6) SET_COL6(0);
+        if(z==d7) SET_COL7(0);
+      }
+    }   
   }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -227,10 +308,10 @@ public:
   // Delay function which keeps display updated
   void delayWithRefresh(int cycles)
   {
-    while(cycles-- >0)
+    unsigned long t = millis() + cycles;
+    while(millis() < t)
       refresh();
   }
-
 };
 extern Disp8x8Class Disp8x8;
 

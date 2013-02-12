@@ -11,6 +11,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class CPongGame : public CGame 
 {
+  byte clrBuf[64];
   int count;
   public:
     static void getGameIcon(byte *dst, byte count)
@@ -36,15 +37,21 @@ class CPongGame : public CGame
     }    
     void init()
     {
-      Timer1Period = 200;
+      Timer1Period = 20;
       count=0;
+      Disp8x8.setBuffer8(clrBuf);
+      for(int x=0; x<8;++x)
+        for(int y=0; y<8;++y)
+        {
+          Disp8x8.set8(x,y,x + 16*(y*2));
+        }
     }
     void handleEvent(char event)
     {
       switch(event)
       {
         case EV_TIMER_1:1;
-//          showScore(12345);
+          for(int i=0;i<64;++i)clrBuf[i]++;//          showScore(12345);
           //showNumber(count++,0);
       }
     }
