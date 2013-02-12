@@ -37,22 +37,30 @@ class CPongGame : public CGame
     }    
     void init()
     {
-      Timer1Period = 20;
+      Timer1Period = 100;
+      Timer2Period = 50;
       count=0;
       Disp8x8.setBuffer8(clrBuf);
-      for(int x=0; x<8;++x)
-        for(int y=0; y<8;++y)
-        {
-          Disp8x8.set8(x,y,x + 16*(y*2));
-        }
     }
     void handleEvent(char event)
     {
       switch(event)
       {
-        case EV_TIMER_1:1;
-          for(int i=0;i<64;++i)clrBuf[i]++;//          showScore(12345);
-          //showNumber(count++,0);
+        case EV_PRESS_A:
+          endGame();
+          break;
+        case EV_TIMER_1:
+          for(int i=0;i<64;++i){
+            byte a = clrBuf[i]>>4;
+            byte b = clrBuf[i]&0xf;
+            if(a) --a;
+            if(b) --b;
+            clrBuf[i] = b+8*a;
+          }
+          break;
+        case EV_TIMER_2:
+          clrBuf[random(64)] = random(256);
+          break;
       }
     }
 };

@@ -246,7 +246,9 @@ void endGame()
       Disp8x8.delayWithRefresh(300);
       delay(300);
     }
+    byte *buffer8 = Disp8x8.setBuffer8(NULL);
     showScore(gameScore);
+    Disp8x8.setBuffer8(buffer8);
     memcpy(Disp8x8.red,red,8);
     memcpy(Disp8x8.green,green,8);
   }

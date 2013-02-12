@@ -49,6 +49,8 @@
 #define DISP_GREEN  2
 #define DISP_YELLOW 3
 
+#define COL8(r,g) ((r)|(g)<<4)
+
 // button debounce time (ms)
 #define DEBOUNCE_TIME   20
 
@@ -173,9 +175,11 @@ public:
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // setBuffer8
   // Associate a 64 byte colour buffer with the display for 8-bit colour mode
-  void setBuffer8(byte *buf)
+  byte *setBuffer8(byte *buf)
   {
+    byte *b=buffer8;
     buffer8 = buf;
+    return b;
   }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -202,23 +206,27 @@ public:
   // Refresh the display matrix. This function must be called repeatedly for the display to work
   void refresh()
   {
-    digitalWrite(P_OE,  LOW);    
+    
+    // clock in a single bit
     digitalWrite(P_CLK, LOW);
     digitalWrite(P_DAT, HIGH);
     digitalWrite(P_CLK, HIGH);
     digitalWrite(P_DAT, LOW);
+    
+    // turn display on
+    digitalWrite(P_OE,  LOW);    
   
     for(int i=0; i<16; ++i)
     {      
-      // Note that this switch statement maps the shift register bits to 
-      // the actual row position and colour. It depends on the specific 
-      // wiring of the circuit board 
       byte d0, d1, d2, d3, d4, d5, d6, d7;
       if(buffer8)
       {
         byte leftShift, *p;
+        
+        // Switch statements map the shift register bits to the actual row position and colour. 
+        // It depends on the specific wiring of the circuit board 
         switch(i) 
-        {//4 for red
+        {
           case 0: p = &buffer8[8*4]; leftShift=4; break;
           case 1: p = &buffer8[8*5]; leftShift=4; break;
           case 2: p = &buffer8[8*6]; leftShift=4; break;
@@ -236,7 +244,9 @@ public:
           case 14: p = &buffer8[8*1]; leftShift=4; break;
           case 15: p = &buffer8[8*0]; leftShift=4; break;
         }
-        
+
+        // setup the duty period for each anode        
+        // based on the pixel colour byte
         d0=(p[0]<<leftShift)&0xf0;
         d1=(p[1]<<leftShift)&0xf0;
         d2=(p[2]<<leftShift)&0xf0;
@@ -268,6 +278,9 @@ public:
           case 14: d = red[1]; duty=redDuty; break;
           case 15: d = red[0]; duty=redDuty; break;
         }
+        
+        // setup the duty period for each anode        
+        // simply based on red/green duty
         d0 = (d&0x01)? duty:0;
         d1 = (d&0x02)? duty:0;
         d2 = (d&0x04)? duty:0;
@@ -278,19 +291,19 @@ public:
         d7 = (d&0x80)? duty:0;
       }
       
-      SET_CLK(0);
-      
+      // clock the shift registers
+      SET_CLK(0);      
       SET_COL0(0); SET_COL1(0); SET_COL2(0); SET_COL3(0);
-      SET_COL4(0); SET_COL5(0); SET_COL6(0); SET_COL7(0);
-  
+      SET_COL4(0); SET_COL5(0); SET_COL6(0); SET_COL7(0);  
       SET_CLK(1);
-
+      
+      // activate anode lines
       SET_COL0(d0); SET_COL1(d1); SET_COL2(d2); SET_COL3(d3);
       SET_COL4(d4); SET_COL5(d5); SET_COL6(d6); SET_COL7(d7);
-      
+
+      // turn off anode lines at end of cycle      
       byte z=0;
       while(++z) {
-//        delayMicroseconds(1);
         if(z==d0) SET_COL0(0);
         if(z==d1) SET_COL1(0);
         if(z==d2) SET_COL2(0);
@@ -300,7 +313,8 @@ public:
         if(z==d6) SET_COL6(0);
         if(z==d7) SET_COL7(0);
       }
-    }   
+    }       
+    digitalWrite(P_OE,  HIGH);    // turn display off
   }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
