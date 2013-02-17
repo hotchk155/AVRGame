@@ -93,7 +93,8 @@ public:
   byte red[8];
   byte green[8];
   byte redDuty;  
-  byte greenDuty;  
+  byte greenDuty;
+  byte invert;  
   byte *buffer8;
   Disp8x8Class() {
     pinMode(P_COL0, OUTPUT);
@@ -111,6 +112,7 @@ public:
     buffer8 = NULL;
     redDuty = 255;
     greenDuty = 255;
+    invert = 0;
     cls();
   }
   
@@ -216,8 +218,9 @@ public:
     // turn display on
     digitalWrite(P_OE,  LOW);    
   
-    for(int i=0; i<16; ++i)
+    for(int j=0; j<16; ++j)
     {      
+      byte row = invert? (15-j) : j;
       byte d0, d1, d2, d3, d4, d5, d6, d7;
       if(buffer8)
       {
@@ -225,7 +228,7 @@ public:
         
         // Switch statements map the shift register bits to the actual row position and colour. 
         // It depends on the specific wiring of the circuit board 
-        switch(i) 
+        switch(row) 
         {
           case 0: p = &buffer8[8*4]; leftShift=4; break;
           case 1: p = &buffer8[8*5]; leftShift=4; break;
@@ -247,48 +250,96 @@ public:
 
         // setup the duty period for each anode        
         // based on the pixel colour byte
-        d0=(p[0]<<leftShift)&0xf0;
-        d1=(p[1]<<leftShift)&0xf0;
-        d2=(p[2]<<leftShift)&0xf0;
-        d3=(p[3]<<leftShift)&0xf0;
-        d4=(p[4]<<leftShift)&0xf0;
-        d5=(p[5]<<leftShift)&0xf0;
-        d6=(p[6]<<leftShift)&0xf0;
-        d7=(p[7]<<leftShift)&0xf0;
+        if(!invert)
+        {
+          d0=(p[0]<<leftShift)&0xf0;
+          d1=(p[1]<<leftShift)&0xf0;
+          d2=(p[2]<<leftShift)&0xf0;
+          d3=(p[3]<<leftShift)&0xf0;
+          d4=(p[4]<<leftShift)&0xf0;
+          d5=(p[5]<<leftShift)&0xf0;
+          d6=(p[6]<<leftShift)&0xf0;
+          d7=(p[7]<<leftShift)&0xf0;
+        }
+        else
+        {
+          d0=(p[7]<<leftShift)&0xf0;
+          d1=(p[6]<<leftShift)&0xf0;
+          d2=(p[5]<<leftShift)&0xf0;
+          d3=(p[4]<<leftShift)&0xf0;
+          d4=(p[3]<<leftShift)&0xf0;
+          d5=(p[2]<<leftShift)&0xf0;
+          d6=(p[1]<<leftShift)&0xf0;
+          d7=(p[0]<<leftShift)&0xf0;          
+        }
       }
       else
       {
         byte d,duty;
-        switch(i) 
-        {
-          case 0: d = red[4]; duty=redDuty; break;
-          case 1: d = red[5]; duty=redDuty; break;
-          case 2: d = red[6]; duty=redDuty; break;
-          case 3: d = green[7]; duty=greenDuty; break;
-          case 4: d = red[7]; duty=redDuty; break;
-          case 5: d = green[6]; duty=greenDuty; break;
-          case 6: d = green[5]; duty=greenDuty; break;
-          case 7: d = green[4]; duty=greenDuty; break;
-          case 8: d = green[0]; duty=greenDuty; break;
-          case 9: d = green[1]; duty=greenDuty; break;
-          case 10: d = red[2]; duty=redDuty; break;
-          case 11: d = red[3]; duty=redDuty; break;
-          case 12: d = green[3]; duty=greenDuty; break;
-          case 13: d = green[2]; duty=greenDuty; break;
-          case 14: d = red[1]; duty=redDuty; break;
-          case 15: d = red[0]; duty=redDuty; break;
-        }
+        
         
         // setup the duty period for each anode        
         // simply based on red/green duty
-        d0 = (d&0x01)? duty:0;
-        d1 = (d&0x02)? duty:0;
-        d2 = (d&0x04)? duty:0;
-        d3 = (d&0x08)? duty:0;
-        d4 = (d&0x10)? duty:0;
-        d5 = (d&0x20)? duty:0;
-        d6 = (d&0x40)? duty:0;
-        d7 = (d&0x80)? duty:0;
+        if(!invert)
+        {
+          switch(j) 
+          {
+            case 0: d = red[4]; duty=redDuty; break;
+            case 1: d = red[5]; duty=redDuty; break;
+            case 2: d = red[6]; duty=redDuty; break;
+            case 3: d = green[7]; duty=greenDuty; break;
+            case 4: d = red[7]; duty=redDuty; break;
+            case 5: d = green[6]; duty=greenDuty; break;
+            case 6: d = green[5]; duty=greenDuty; break;
+            case 7: d = green[4]; duty=greenDuty; break;
+            case 8: d = green[0]; duty=greenDuty; break;
+            case 9: d = green[1]; duty=greenDuty; break;
+            case 10: d = red[2]; duty=redDuty; break;
+            case 11: d = red[3]; duty=redDuty; break;
+            case 12: d = green[3]; duty=greenDuty; break;
+            case 13: d = green[2]; duty=greenDuty; break;
+            case 14: d = red[1]; duty=redDuty; break;
+            case 15: d = red[0]; duty=redDuty; break;
+          }
+          d0 = (d&0x01)? duty:0;
+          d1 = (d&0x02)? duty:0;
+          d2 = (d&0x04)? duty:0;
+          d3 = (d&0x08)? duty:0;
+          d4 = (d&0x10)? duty:0;
+          d5 = (d&0x20)? duty:0;
+          d6 = (d&0x40)? duty:0;
+          d7 = (d&0x80)? duty:0;
+        }
+        else
+        {
+          switch(j) 
+          {
+            case 0: d = red[7-4]; duty=redDuty; break;
+            case 1: d = red[7-5]; duty=redDuty; break;
+            case 2: d = red[7-6]; duty=redDuty; break;
+            case 3: d = green[7-7]; duty=greenDuty; break;
+            case 4: d = red[7-7]; duty=redDuty; break;
+            case 5: d = green[7-6]; duty=greenDuty; break;
+            case 6: d = green[7-5]; duty=greenDuty; break;
+            case 7: d = green[7-4]; duty=greenDuty; break;
+            case 8: d = green[7-0]; duty=greenDuty; break;
+            case 9: d = green[7-1]; duty=greenDuty; break;
+            case 10: d = red[7-2]; duty=redDuty; break;
+            case 11: d = red[7-3]; duty=redDuty; break;
+            case 12: d = green[7-3]; duty=greenDuty; break;
+            case 13: d = green[7-2]; duty=greenDuty; break;
+            case 14: d = red[7-1]; duty=redDuty; break;
+            case 15: d = red[7-0]; duty=redDuty; break;
+          }
+          d0 = (d&0x80)? duty:0;
+          d1 = (d&0x40)? duty:0;
+          d2 = (d&0x20)? duty:0;
+          d3 = (d&0x10)? duty:0;
+          d4 = (d&0x08)? duty:0;
+          d5 = (d&0x04)? duty:0;
+          d6 = (d&0x02)? duty:0;
+          d7 = (d&0x01)? duty:0;
+        }
       }
       
       // clock the shift registers

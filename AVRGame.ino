@@ -296,6 +296,8 @@ void setup()
   // the last selected game is started (or menu if not valid)
   byte which = EEPROM.read(EEPROM_GAMESELECTED);
   startGame(which);
+  
+  Disp8x8.invert = 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -306,11 +308,27 @@ void loop()
   byte event = 0;
   unsigned long milliseconds = millis();
 
+  byte buttonA, buttonB, buttonC, buttonD;
+  if(!Disp8x8.invert)
+  {
+    buttonA = !digitalRead(P_BUTA);
+    buttonB = !digitalRead(P_BUTB);
+    buttonC = !digitalRead(P_BUTC);
+    buttonD = !digitalRead(P_BUTD);
+  }
+  else
+  {
+    buttonA = !digitalRead(P_BUTD);
+    buttonB = !digitalRead(P_BUTC);
+    buttonC = !digitalRead(P_BUTB);
+    buttonD = !digitalRead(P_BUTA);
+  }
+
   // We use the milliseconds until first button press after startup to give us some random
   // number entropy
   if(firstButtonPress)
   {
-    if(digitalRead(P_BUTA) == LOW || digitalRead(P_BUTB) == LOW || digitalRead(P_BUTC) == LOW || digitalRead(P_BUTD) == LOW)
+    if(buttonA || buttonB || buttonC || buttonD)
     { 
       randomSeed(milliseconds);
       firstButtonPress = 0;
@@ -319,7 +337,7 @@ void loop()
   
   // Check for buttons A and C being held together for 1 second. This
   // combination returns to the menu
-  if(digitalRead(P_BUTA) == LOW && digitalRead(P_BUTC) == LOW && thisGame > 0) 
+  if(buttonA && buttonC && thisGame > 0) 
   {
     if(!menuSelectKeyPressed) 
     {
@@ -336,7 +354,7 @@ void loop()
   }
  
   // Poll and debounce button A
-  if(digitalRead(P_BUTA) == LOW) 
+  if(buttonA) 
   {
     if(!timeButtonAPress)
     {      
@@ -351,7 +369,7 @@ void loop()
   }
   
   // Poll and debounce button B
-  if(digitalRead(P_BUTB) == LOW) 
+  if(buttonB) 
   {
     if(!timeButtonBPress)
     {
@@ -366,7 +384,7 @@ void loop()
   }
 
   // Poll and debounce button C
-  if(digitalRead(P_BUTC) == LOW) 
+  if(buttonC) 
   {
     if(!timeButtonCPress)
     {
@@ -381,7 +399,7 @@ void loop()
   }
 
   // Poll and debounce button D
-  if(digitalRead(P_BUTD) == LOW) 
+  if(buttonD) 
   {
     if(!timeButtonDPress)
     {
