@@ -220,7 +220,6 @@ public:
   
     for(int j=0; j<16; ++j)
     {      
-      byte row = invert? (15-j) : j;
       byte d0, d1, d2, d3, d4, d5, d6, d7;
       if(buffer8)
       {
@@ -228,30 +227,30 @@ public:
         
         // Switch statements map the shift register bits to the actual row position and colour. 
         // It depends on the specific wiring of the circuit board 
-        switch(row) 
-        {
-          case 0: p = &buffer8[8*4]; leftShift=4; break;
-          case 1: p = &buffer8[8*5]; leftShift=4; break;
-          case 2: p = &buffer8[8*6]; leftShift=4; break;
-          case 3: p = &buffer8[8*7]; leftShift=0; break;
-          case 4: p = &buffer8[8*7]; leftShift=4; break;
-          case 5: p = &buffer8[8*6]; leftShift=0; break;
-          case 6: p = &buffer8[8*5]; leftShift=0; break;
-          case 7: p = &buffer8[8*4]; leftShift=0; break;
-          case 8: p = &buffer8[8*0]; leftShift=0; break;
-          case 9: p = &buffer8[8*1]; leftShift=0; break;
-          case 10: p = &buffer8[8*2]; leftShift=4; break;
-          case 11: p = &buffer8[8*3]; leftShift=4; break;
-          case 12: p = &buffer8[8*3]; leftShift=0; break;
-          case 13: p = &buffer8[8*2]; leftShift=0; break;
-          case 14: p = &buffer8[8*1]; leftShift=4; break;
-          case 15: p = &buffer8[8*0]; leftShift=4; break;
-        }
 
         // setup the duty period for each anode        
         // based on the pixel colour byte
         if(!invert)
         {
+          switch(j) 
+          {
+            case 0: p = &buffer8[8*4]; leftShift=4; break;
+            case 1: p = &buffer8[8*5]; leftShift=4; break;
+            case 2: p = &buffer8[8*6]; leftShift=4; break;
+            case 3: p = &buffer8[8*7]; leftShift=0; break;
+            case 4: p = &buffer8[8*7]; leftShift=4; break;
+            case 5: p = &buffer8[8*6]; leftShift=0; break;
+            case 6: p = &buffer8[8*5]; leftShift=0; break;
+            case 7: p = &buffer8[8*4]; leftShift=0; break;
+            case 8: p = &buffer8[8*0]; leftShift=0; break;
+            case 9: p = &buffer8[8*1]; leftShift=0; break;
+            case 10: p = &buffer8[8*2]; leftShift=4; break;
+            case 11: p = &buffer8[8*3]; leftShift=4; break;
+            case 12: p = &buffer8[8*3]; leftShift=0; break;
+            case 13: p = &buffer8[8*2]; leftShift=0; break;
+            case 14: p = &buffer8[8*1]; leftShift=4; break;
+            case 15: p = &buffer8[8*0]; leftShift=4; break;
+          }
           d0=(p[0]<<leftShift)&0xf0;
           d1=(p[1]<<leftShift)&0xf0;
           d2=(p[2]<<leftShift)&0xf0;
@@ -263,6 +262,25 @@ public:
         }
         else
         {
+          switch(j) 
+          {
+            case 0: p = &buffer8[8*3]; leftShift=4; break;
+            case 1: p = &buffer8[8*2]; leftShift=4; break;
+            case 2: p = &buffer8[8*1]; leftShift=4; break;
+            case 3: p = &buffer8[8*0]; leftShift=0; break;
+            case 4: p = &buffer8[8*0]; leftShift=4; break;
+            case 5: p = &buffer8[8*1]; leftShift=0; break;
+            case 6: p = &buffer8[8*2]; leftShift=0; break;
+            case 7: p = &buffer8[8*3]; leftShift=0; break;
+            case 8: p = &buffer8[8*7]; leftShift=0; break;
+            case 9: p = &buffer8[8*6]; leftShift=0; break;
+            case 10: p = &buffer8[8*5]; leftShift=4; break;
+            case 11: p = &buffer8[8*4]; leftShift=4; break;
+            case 12: p = &buffer8[8*4]; leftShift=0; break;
+            case 13: p = &buffer8[8*5]; leftShift=0; break;
+            case 14: p = &buffer8[8*6]; leftShift=4; break;
+            case 15: p = &buffer8[8*7]; leftShift=4; break;
+          }
           d0=(p[7]<<leftShift)&0xf0;
           d1=(p[6]<<leftShift)&0xf0;
           d2=(p[5]<<leftShift)&0xf0;

@@ -45,11 +45,15 @@ class CPongGame : public CGame
         byte g=((b>>3)&0x7)<<1;
         clrBuf[b] = COL8(r,g);
       }
+          Timer1Period = 100;
+          Timer2Period = 50;
+          IRLink.mode = IRLINK_SEND;
     }
     void handleEvent(char event)
     {
       switch(event)
       {
+        /*
         case EV_PRESS_D:
           endGame();
           break;
@@ -57,9 +61,7 @@ class CPongGame : public CGame
           Disp8x8.cls();
           break;
         case EV_PRESS_C:
-          Timer1Period = 100;
-          Timer2Period = 50;
-          break;
+          break;*/
         case EV_TIMER_1:
           for(int i=0;i<64;++i){
             byte a = clrBuf[i]>>4;
@@ -72,8 +74,17 @@ class CPongGame : public CGame
         case EV_TIMER_2:
           clrBuf[random(64)] = random(256);
           break;
-      }
+      
+      case EV_PRESS_A: IRLink.sendEvent('A'); break;
+      case EV_PRESS_B: IRLink.sendEvent('B'); break;
+      case EV_PRESS_C: IRLink.sendEvent('C'); break;
+      case EV_PRESS_D: IRLink.sendEvent('D'); break;
+      case EV_RELEASE_A: IRLink.sendEvent('a'); break;
+      case EV_RELEASE_B: IRLink.sendEvent('b'); break;
+      case EV_RELEASE_C: IRLink.sendEvent('c'); break;
+      case EV_RELEASE_D: IRLink.sendEvent('d'); break;
     }
+  }
 };
 CGameFactoryImpl<CPongGame> PongGame;
 

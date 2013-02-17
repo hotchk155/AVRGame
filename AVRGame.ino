@@ -18,6 +18,7 @@
 #include <EEPROM.h>
 
 #include "AVRGame.h"
+#include "IRLink.h"
 #include "Menu.h"
 
 ///////////////////////////////////////////////////////////////////////////
@@ -34,6 +35,7 @@
 
 // Global variables
 Disp8x8Class Disp8x8;
+CIRLinkClass IRLink;
 CGameFactory *gameFactory[MAX_GAMES] = {0};
 byte numGameFactories = 0;
 CGame *pGame = NULL;
@@ -289,6 +291,9 @@ void setup()
   digitalWrite(P_BUTC, HIGH);
   digitalWrite(P_BUTD, HIGH);
   digitalWrite(P_LED, HIGH);
+
+  IRLink.enable();
+  Disp8x8.invert = IRLink.enabled;
   
   // initialise sound handling
   initSound();
@@ -297,7 +302,6 @@ void setup()
   byte which = EEPROM.read(EEPROM_GAMESELECTED);
   startGame(which);
   
-  Disp8x8.invert = 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -413,7 +417,8 @@ void loop()
       pGame->handleEvent(EV_RELEASE_D);
   }
   
-
+pGame->handleEvent(IRLink.getEvent());
+  
   // Check whether timer events 1..5 are due
   if(Timer1Period && nextTimer1Event < milliseconds)
   {
