@@ -48,6 +48,7 @@ class CPongGame : public CGame
           Timer1Period = 100;
           Timer2Period = 50;
           IRLink.mode = IRLINK_SEND;
+          IRLink.state = IR_LINKUP;
     }
     void handleEvent(char event)
     {
@@ -75,14 +76,14 @@ class CPongGame : public CGame
           clrBuf[random(64)] = random(256);
           break;
       
-      case EV_PRESS_A: IRLink.sendEvent('A'); break;
-      case EV_PRESS_B: IRLink.sendEvent('B'); break;
-      case EV_PRESS_C: IRLink.sendEvent('C'); break;
-      case EV_PRESS_D: IRLink.sendEvent('D'); break;
+/*      case EV_PRESS_A: IRLink.sendEvent(0x00); break;
+      case EV_PRESS_B: IRLink.sendEvent(0x55); break;
+      case EV_PRESS_C: IRLink.sendEvent(0xaa); break;
+      case EV_PRESS_D: IRLink.sendEvent(0xff); break;
       case EV_RELEASE_A: IRLink.sendEvent('a'); break;
       case EV_RELEASE_B: IRLink.sendEvent('b'); break;
       case EV_RELEASE_C: IRLink.sendEvent('c'); break;
-      case EV_RELEASE_D: IRLink.sendEvent('d'); break;
+      case EV_RELEASE_D: IRLink.sendEvent('d'); break;*/
     }
   }
 };
