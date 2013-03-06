@@ -18,7 +18,6 @@
 #include <EEPROM.h>
 
 #include "AVRGame.h"
-#include "IRLink.h"
 #include "Menu.h"
 
 ///////////////////////////////////////////////////////////////////////////
@@ -29,14 +28,13 @@
 #include "BreakoutGame.h"
 #include "FourInARowGame.h"
 #include "MemoryGame.h"
-#include "PongGame.h"
+
 
 //
 ///////////////////////////////////////////////////////////////////////////
 
 // Global variables
 Disp8x8Class Disp8x8;
-CIRLinkClass IRLink;
 CGameFactory *gameFactory[MAX_GAMES] = {0};
 byte numGameFactories = 0;
 CGame *pGame = NULL;
@@ -97,7 +95,6 @@ void startGame(byte which)
   Timer4Period = 0;
   Timer5Period = 0;
   gameScore = 0;
-  IRLink.state = IR_OFF;
   pGame->init();
   pGame->handleEvent(EV_START);
 }
@@ -359,100 +356,92 @@ void loop()
   {
     menuSelectKeyPressed = 0;
   }
-
-  if(IR_LINKUP == IRLink.state)
-  {
-    IRLink.linkup();
-  }
-  else
-  {
  
-    // Poll and debounce button A
-    if(buttonA) 
-    {
-      if(!timeButtonAPress)
-      {      
-        timeButtonAPress = milliseconds + DEBOUNCE_TIME;
-        pGame->handleEvent(EV_PRESS_A);
-      }
+  // Poll and debounce button A
+  if(buttonA) 
+  {
+    if(!timeButtonAPress)
+    {      
+      timeButtonAPress = milliseconds + DEBOUNCE_TIME;
+      pGame->handleEvent(EV_PRESS_A);
     }
-    else if(timeButtonAPress && timeButtonAPress < milliseconds)
-    {
-        timeButtonAPress = 0;
-        pGame->handleEvent(EV_RELEASE_A);
-    }
-    
-    // Poll and debounce button B
-    if(buttonB) 
-    {
-      if(!timeButtonBPress)
-      {
-        timeButtonBPress = milliseconds + DEBOUNCE_TIME;
-        pGame->handleEvent(EV_PRESS_B);
-      }
-    }
-    else if(timeButtonBPress && timeButtonBPress < milliseconds)
-    {
-        timeButtonBPress = 0;
-        pGame->handleEvent(EV_RELEASE_B);
-    }
+  }
+  else if(timeButtonAPress && timeButtonAPress < milliseconds)
+  {
+      timeButtonAPress = 0;
+      pGame->handleEvent(EV_RELEASE_A);
+  }
   
-    // Poll and debounce button C
-    if(buttonC) 
+  // Poll and debounce button B
+  if(buttonB) 
+  {
+    if(!timeButtonBPress)
     {
-      if(!timeButtonCPress)
-      {
-        timeButtonCPress = milliseconds + DEBOUNCE_TIME;
-        pGame->handleEvent(EV_PRESS_C);
-      }
+      timeButtonBPress = milliseconds + DEBOUNCE_TIME;
+      pGame->handleEvent(EV_PRESS_B);
     }
-    else if(timeButtonCPress && timeButtonCPress < milliseconds)
+  }
+  else if(timeButtonBPress && timeButtonBPress < milliseconds)
+  {
+      timeButtonBPress = 0;
+      pGame->handleEvent(EV_RELEASE_B);
+  }
+
+  // Poll and debounce button C
+  if(buttonC) 
+  {
+    if(!timeButtonCPress)
     {
-        timeButtonCPress = 0;
-        pGame->handleEvent(EV_RELEASE_C);
+      timeButtonCPress = milliseconds + DEBOUNCE_TIME;
+      pGame->handleEvent(EV_PRESS_C);
     }
+  }
+  else if(timeButtonCPress && timeButtonCPress < milliseconds)
+  {
+      timeButtonCPress = 0;
+      pGame->handleEvent(EV_RELEASE_C);
+  }
+
+  // Poll and debounce button D
+  if(buttonD) 
+  {
+    if(!timeButtonDPress)
+    {
+      timeButtonDPress = milliseconds + DEBOUNCE_TIME;
+      pGame->handleEvent(EV_PRESS_D);
+    }
+  }
+  else if(timeButtonDPress && timeButtonDPress < milliseconds)
+  {
+      timeButtonDPress = 0;
+      pGame->handleEvent(EV_RELEASE_D);
+  }
   
-    // Poll and debounce button D
-    if(buttonD) 
-    {
-      if(!timeButtonDPress)
-      {
-        timeButtonDPress = milliseconds + DEBOUNCE_TIME;
-        pGame->handleEvent(EV_PRESS_D);
-      }
-    }
-    else if(timeButtonDPress && timeButtonDPress < milliseconds)
-    {
-        timeButtonDPress = 0;
-        pGame->handleEvent(EV_RELEASE_D);
-    }
-    
-    // Check whether timer events 1..5 are due
-    if(Timer1Period && nextTimer1Event < milliseconds)
-    {
-        pGame->handleEvent(EV_TIMER_1);
-        nextTimer1Event = milliseconds + Timer1Period;
-    }
-    if(Timer2Period && nextTimer2Event < milliseconds)
-    {
-        pGame->handleEvent(EV_TIMER_2);
-        nextTimer2Event = milliseconds + Timer2Period;
-    }
-    if(Timer3Period && nextTimer3Event < milliseconds)
-    {
-        pGame->handleEvent(EV_TIMER_3);
-        nextTimer3Event = milliseconds + Timer3Period;
-    }
-    if(Timer4Period && nextTimer4Event < milliseconds)
-    {
-        pGame->handleEvent(EV_TIMER_4);
-        nextTimer4Event = milliseconds + Timer4Period;
-    }
-    if(Timer5Period && nextTimer5Event < milliseconds)
-    {
-        pGame->handleEvent(EV_TIMER_5);
-        nextTimer5Event = milliseconds + Timer5Period;
-    }
+  // Check whether timer events 1..5 are due
+  if(Timer1Period && nextTimer1Event < milliseconds)
+  {
+      pGame->handleEvent(EV_TIMER_1);
+      nextTimer1Event = milliseconds + Timer1Period;
+  }
+  if(Timer2Period && nextTimer2Event < milliseconds)
+  {
+      pGame->handleEvent(EV_TIMER_2);
+      nextTimer2Event = milliseconds + Timer2Period;
+  }
+  if(Timer3Period && nextTimer3Event < milliseconds)
+  {
+      pGame->handleEvent(EV_TIMER_3);
+      nextTimer3Event = milliseconds + Timer3Period;
+  }
+  if(Timer4Period && nextTimer4Event < milliseconds)
+  {
+      pGame->handleEvent(EV_TIMER_4);
+      nextTimer4Event = milliseconds + Timer4Period;
+  }
+  if(Timer5Period && nextTimer5Event < milliseconds)
+  {
+      pGame->handleEvent(EV_TIMER_5);
+      nextTimer5Event = milliseconds + Timer5Period;
   }
 
   // refresh the display 
