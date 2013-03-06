@@ -14,6 +14,7 @@ class CMenu : public CGame
     char sel;
     char offset;
     char count;
+    char shift;
   public:  
     static void getGameIcon(byte *dst, byte count)
     {
@@ -39,6 +40,7 @@ class CMenu : public CGame
     }
     void init()
     {
+      shift = 0;
       sel = EEPROM.read(EEPROM_GAMESELECTED);
       if(sel <= 0 || sel >= numGameFactories)
         sel = 1;
@@ -67,13 +69,31 @@ class CMenu : public CGame
     {
       switch(event)
       {
-        case EV_PRESS_C: // toggle
-          if(sel == 0)
+        case EV_PRESS_A:
+          shift=1;
+          break;
+        case EV_RELEASE_A:
+          shift=0;
+          break;
+        
+        case EV_PRESS_C: 
+          if(shift)
           {
+            // version
+            Disp8x8.cls();
+            getDigit(VERSION_HI, 0, Disp8x8.green);
+            getDigit(VERSION_LO, 1, Disp8x8.green);
+            Disp8x8.red[5] = 0b00001000;
+            Disp8x8.delayWithRefresh(1000);
+          }
+          else if(sel == 0)
+          {
+            // toggle
             setSoundOn(!isSoundOn());
           }
           else
           {
+            // start game
             setNextGame(sel);
           }
           break;

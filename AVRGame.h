@@ -478,4 +478,5 @@ extern void setNextGame(int which);
 extern void showScore(unsigned long n);
 extern void endGame();
 extern void setTimeOut(byte whichTimer, unsigned long period);
+extern void getDigit(byte which, byte side, byte *data);
 

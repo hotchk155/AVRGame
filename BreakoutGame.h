@@ -175,7 +175,7 @@ class CBreakoutGame : public CGame
                 }
                 else
                 {
-                  Disp8x8.delayWithRefresh(500);
+                  Disp8x8.delayWithRefresh(1000);
                   newBall();
                   break;
                 }                            

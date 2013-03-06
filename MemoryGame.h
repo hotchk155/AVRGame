@@ -175,7 +175,7 @@ class CMemoryGame : public CGame
             }
             if(!--lives)
               endGame();
-            Disp8x8.delayWithRefresh(500);            
+            Disp8x8.delayWithRefresh(800);            
             startPlayback();
         }          
         else
@@ -183,7 +183,7 @@ class CMemoryGame : public CGame
           if(++sequencePos>=sequenceLen)
           {
             gameScore+=100;
-            Disp8x8.delayWithRefresh(200);
+            Disp8x8.delayWithRefresh(500);
             addNewItem();
             Disp8x8.cls();
             Disp8x8.green[2] = 0b00000001;     
@@ -192,11 +192,11 @@ class CMemoryGame : public CGame
             Disp8x8.green[5] = 0b00101000;     
             Disp8x8.green[6] = 0b00010000;     
             playSound(1000, 50);
-            Disp8x8.delayWithRefresh(30);
+            Disp8x8.delayWithRefresh(50);
             playSound(1200, 50);
-            Disp8x8.delayWithRefresh(30);
+            Disp8x8.delayWithRefresh(50);
             playSound(1400, 50);
-            Disp8x8.delayWithRefresh(200);
+            Disp8x8.delayWithRefresh(800);
             startPlayback();
           }
           else
