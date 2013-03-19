@@ -74,8 +74,7 @@ enum {
   EV_TIMER_2,
   EV_TIMER_3,
   EV_TIMER_4,
-  EV_TIMER_5,
-  EV_IR
+  EV_TIMER_5
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -209,7 +208,6 @@ public:
   // Refresh the display matrix. This function must be called repeatedly for the display to work
   void refresh()
   {
-    
     // clock in a single bit
     digitalWrite(P_CLK, LOW);
     digitalWrite(P_DAT, HIGH);
@@ -252,14 +250,14 @@ public:
             case 14: p = &buffer8[8*1]; leftShift=4; break;
             case 15: p = &buffer8[8*0]; leftShift=4; break;
           }
-          d0=(p[0]<<leftShift)&0xf0;
-          d1=(p[1]<<leftShift)&0xf0;
-          d2=(p[2]<<leftShift)&0xf0;
-          d3=(p[3]<<leftShift)&0xf0;
-          d4=(p[4]<<leftShift)&0xf0;
-          d5=(p[5]<<leftShift)&0xf0;
-          d6=(p[6]<<leftShift)&0xf0;
-          d7=(p[7]<<leftShift)&0xf0;
+          d7=(p[0]<<leftShift)&0xf0;
+          d6=(p[1]<<leftShift)&0xf0;
+          d5=(p[2]<<leftShift)&0xf0;
+          d4=(p[3]<<leftShift)&0xf0;
+          d3=(p[4]<<leftShift)&0xf0;
+          d2=(p[5]<<leftShift)&0xf0;
+          d1=(p[6]<<leftShift)&0xf0;
+          d0=(p[7]<<leftShift)&0xf0;
         }
         else
         {
@@ -282,15 +280,17 @@ public:
             case 14: p = &buffer8[8*6]; leftShift=4; break;
             case 15: p = &buffer8[8*7]; leftShift=4; break;
           }
-          d0=(p[7]<<leftShift)&0xf0;
-          d1=(p[6]<<leftShift)&0xf0;
-          d2=(p[5]<<leftShift)&0xf0;
-          d3=(p[4]<<leftShift)&0xf0;
-          d4=(p[3]<<leftShift)&0xf0;
-          d5=(p[2]<<leftShift)&0xf0;
-          d6=(p[1]<<leftShift)&0xf0;
-          d7=(p[0]<<leftShift)&0xf0;          
+          d7=(p[7]<<leftShift)&0xf0;
+          d6=(p[6]<<leftShift)&0xf0;
+          d5=(p[5]<<leftShift)&0xf0;
+          d4=(p[4]<<leftShift)&0xf0;
+          d3=(p[3]<<leftShift)&0xf0;
+          d2=(p[2]<<leftShift)&0xf0;
+          d1=(p[1]<<leftShift)&0xf0;
+          d0=(p[0]<<leftShift)&0xf0;          
         }
+        
+        //
       }
       else
       {
@@ -360,7 +360,7 @@ public:
           d7 = (d&0x01)? duty:0;
         }
       }
-      
+            
       // clock the shift registers
       SET_CLK(0);      
       SET_COL0(0); SET_COL1(0); SET_COL2(0); SET_COL3(0);

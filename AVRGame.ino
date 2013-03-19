@@ -10,16 +10,16 @@
 //// Rev 1.0 27jan13 Initial release
 //// Rev 1.1 10feb13 Bug fixes
 //// Rev 2.0 06mar13 Display dimming, Display invert, 8-bits per pixel mode
+//// Rev 2.1 19mar13 8-bits per pixel mode bug fix
 ////
+#define VERSION_HI 2
+#define VERSION_LO 1
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
 #include <Arduino.h>
 #include <Tone.h>
 #include <EEPROM.h>
-
-#define VERSION_HI 2
-#define VERSION_LO 0
 
 #include "AVRGame.h"
 #include "Menu.h"
@@ -29,6 +29,7 @@
 // include games here
 //
 #include "InvadersGame.h"
+#include "GhostMazeGame.h"
 #include "BreakoutGame.h"
 #include "FourInARowGame.h"
 #include "MemoryGame.h"
