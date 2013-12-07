@@ -11,7 +11,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define GM_NUM_ROWS  19
 #define GM_COL_WALL 0xF0
-#define GM_COL_FOOD 0x01
+#define GM_COL_FOOD 0x13
 #define GM_COL_PLAYER 0xFF
 #define GM_NUM_GHOSTS 4
 

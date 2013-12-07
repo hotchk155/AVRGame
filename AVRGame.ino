@@ -462,6 +462,6 @@ void loop()
   }
   
   // Flash the heartbeat LED
-  digitalWrite(P_LED,heartbeat&128);
+  digitalWrite(P_LED,!heartbeat);
   heartbeat++;
 }
