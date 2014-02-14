@@ -11,9 +11,10 @@
 //// Rev 1.1 10feb13 Bug fixes
 //// Rev 2.0 06mar13 Display dimming, Display invert, 8-bits per pixel mode
 //// Rev 2.1 19mar13 8-bits per pixel mode bug fix
+//// Rev 2.2 14feb14 minor cosmetic tweaks
 ////
 #define VERSION_HI 2
-#define VERSION_LO 1
+#define VERSION_LO 2
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
