@@ -12,9 +12,10 @@
 //// Rev 2.0 06mar13 Display dimming, Display invert, 8-bits per pixel mode
 //// Rev 2.1 19mar13 8-bits per pixel mode bug fix
 //// Rev 2.2 14feb14 minor cosmetic tweaks
+//// Rev 2.3 23feb14 adding Stephen Cropp's Snake Game to main build
 ////
 #define VERSION_HI 2
-#define VERSION_LO 2
+#define VERSION_LO 3
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
@@ -34,6 +35,7 @@
 #include "BreakoutGame.h"
 #include "FourInARowGame.h"
 #include "MemoryGame.h"
+#include "SnakeGame.h"
 //
 ///////////////////////////////////////////////////////////////////////////
 
