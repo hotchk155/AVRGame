@@ -30,12 +30,15 @@
 //
 // include games here
 //
+#include "BirdGame.h"
+/*
 #include "InvadersGame.h"
 #include "GhostMazeGame.h"
 #include "BreakoutGame.h"
 #include "FourInARowGame.h"
 #include "MemoryGame.h"
 #include "SnakeGame.h"
+*/
 //
 ///////////////////////////////////////////////////////////////////////////
 
