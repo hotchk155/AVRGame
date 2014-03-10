@@ -13,9 +13,10 @@
 //// Rev 2.1 19mar13 8-bits per pixel mode bug fix
 //// Rev 2.2 14feb14 minor cosmetic tweaks
 //// Rev 2.3 23feb14 adding Stephen Cropp's Snake Game to main build
+//// Rev 2.4 10mar14 crappy bird!
 ////
 #define VERSION_HI 2
-#define VERSION_LO 3
+#define VERSION_LO 4
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
@@ -30,15 +31,14 @@
 //
 // include games here
 //
-#include "BirdGame.h"
-/*
 #include "InvadersGame.h"
 #include "GhostMazeGame.h"
 #include "BreakoutGame.h"
 #include "FourInARowGame.h"
 #include "MemoryGame.h"
 #include "SnakeGame.h"
-*/
+#include "BirdGame.h"
+
 //
 ///////////////////////////////////////////////////////////////////////////
 

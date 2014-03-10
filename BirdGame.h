@@ -17,31 +17,123 @@ class CBirdGame : public CGame
   byte nextGapMax;  
   float height;
   float velocity;  
+  byte closeTop;
+  byte closeBottom;
+  byte gapBetweenWalls;
+  byte gapSize;  
+  byte gameLevel;
+  byte wingToggle;
+  
   public:
     static void getGameIcon(byte *dst, byte count)
     {
-      dst[0] = 0b11111111;          
-      dst[1] = 0b00000000;
-      dst[2] = 0b00000000;
-      dst[3] = 0b00000000;
-      dst[4] = 0b00000000;
-      dst[5] = 0b00000000;
-      dst[6] = 0b00000000;
-      dst[7] = 0b11111111;
+      switch(count&0x3)
+      {
+        case 0:
+          dst[0] = 0b00000000;          
+          dst[1] = 0b00000000;
+          dst[2] = 0b00010011;
+          dst[3] = 0b00000010;
+          dst[4] = 0b00000000;
+          dst[5] = 0b00000000;
+          dst[6] = 0b00000000;
+          dst[7] = 0b00000000;
+          
+          dst[8] =  0b00111000;          
+          dst[9] =  0b01111100;
+          dst[10] = 0b01101111;
+          dst[11] = 0b11111110;
+          dst[12] = 0b01111000;
+          dst[13] = 0b01110000;
+          dst[14] = 0b01100000;
+          dst[15] = 0b00000000;
+          break;
+      
+        case 1:
+        case 3:
+          dst[0] =  0b00000000;          
+          dst[1] =  0b00000000;
+          dst[2] =  0b00000000;
+          dst[3] =  0b00010011;
+          dst[4] =  0b00000010;
+          dst[5] =  0b00000000;
+          dst[6] =  0b00000000;
+          dst[7] =  0b00000000;
+          
+          dst[8] =  0b00000000;          
+          dst[9] =  0b00111000;
+          dst[10] = 0b01111100;
+          dst[11] = 0b11101111;
+          dst[12] = 0b11111110;
+          dst[13] = 0b01111000;
+          dst[14] = 0b00000000;
+          dst[15] = 0b00000000;
+          break;
+
+        case 2:
+          dst[0] = 0b00000000;          
+          dst[1] = 0b00000000;
+          dst[2] = 0b00000000;
+          dst[3] = 0b00000000;
+          dst[4] = 0b00010011;
+          dst[5] = 0b00000010;
+          dst[6] = 0b00000000;
+          dst[7] = 0b00000000;
+          
+          dst[8] =  0b00000000;          
+          dst[9] =  0b01100000;
+          dst[10] = 0b11111000;
+          dst[11] = 0b01111100;
+          dst[12] = 0b01101111;
+          dst[13] = 0b11111110;
+          dst[14] = 0b00111000;
+          dst[15] = 0b00000000;
+          break;
+      }
+    }
+
+    void nextWall(int space)
+    {
+      distanceToNextWall = space;
+      nextGapMin = random(7-gapSize);
+      nextGapMax = nextGapMin + gapSize - 1;
+    }
+    
+    void advanceLevel()
+    {
+      gameLevel++;
+      if(!((20+gameLevel)%25) && gapSize>2)
+        --gapSize;
+      if(!(gameLevel%9) && gapBetweenWalls>5)
+        --gapBetweenWalls;
+      if(gameLevel > 20)
+        closeBottom = 1;
+      if(gameLevel > 30)
+        closeTop = 1; 
+      if(Timer2Period > 50)
+       Timer2Period --;
+      if(Timer1Period > 50)
+       Timer1Period --;
     }
     
     void init()
     {
-      distanceToNextWall = 10;
-      nextGapMin = 2;
-      nextGapMax = 4;
       memset(walls,0,8);
-      Timer1Period = 100; 
+      gameLevel = 0;
+      gapBetweenWalls = 8;
+      gapSize = 3;
+      Timer1Period = 100; // gravity
       Timer2Period = 300; // forward
+      closeTop = 0;
+      closeBottom = 0;      
+      advanceLevel();
       height = 3;
       velocity = 0;
-
+      wingToggle = 1;
+      nextWall(10);
     }
+        
+    
     void handleEvent(char event)
     {
       int i;
@@ -51,6 +143,8 @@ class CBirdGame : public CGame
         case EV_PRESS_B:
         case EV_PRESS_C:
         case EV_PRESS_D:
+          wingToggle = !wingToggle;
+          playSound(200+wingToggle * 200, 20);
           if(velocity > -0.5)
             velocity -= 0.1;
           break;
@@ -81,9 +175,7 @@ class CBirdGame : public CGame
             if(--distanceToNextWall<0)
             {
               wall=1;
-              distanceToNextWall = 8;
-              nextGapMin = random(6);
-              nextGapMax = nextGapMin + 2;
+              nextWall(gapBetweenWalls);
             }
         
             for(i=0;i<8;++i)
@@ -94,7 +186,36 @@ class CBirdGame : public CGame
               if(wall & (i < nextGapMin || i > nextGapMax))
                 walls[i]|=0x01;
             }
-            gameScore+=score;
+            if(closeTop)
+              walls[0]|=0x01;
+            if(closeBottom)
+              walls[7]|=0x01;
+            if(score)
+            {
+              gameScore++;
+              if(!(gameScore % 10))
+              {
+                playSound(400, 200);            
+                delay(50);
+                playSound(800, 200);            
+                delay(50);
+                playSound(400, 200);            
+                delay(50);
+                playSound(800, 200);            
+                delay(50);
+                advanceLevel();
+              }
+              else
+              {
+                playSound(800, 200);            
+                delay(10);
+              }
+            }
+            else
+            {
+              playSound(800-50*height, 10);
+            }
+            
           }
           break;          
       }
@@ -104,6 +225,13 @@ class CBirdGame : public CGame
       if(Disp8x8.get(1, height))
       {
         Disp8x8.set(1, height, DISP_YELLOW);
+        for(i=600; i>100; i-=50)
+        {
+          playSound(i, 50);
+          Disp8x8.delayWithRefresh(10);
+          playSound(i+100, 50);
+          Disp8x8.delayWithRefresh(10);
+        }
         endGame();
       }
       Disp8x8.set(1, height, DISP_GREEN);
