@@ -22,15 +22,16 @@ class CBirdGame : public CGame
   byte gapBetweenWalls;
   byte gapSize;  
   byte gameLevel;
-  byte wingToggle;
   
   public:
+    //////////////////////////////////////////////
+    // The animated menu icon
     static void getGameIcon(byte *dst, byte count)
     {
       switch(count&0x3)
       {
         case 0:
-          dst[0] = 0b00000000;          
+          dst[0] = 0b00000000; // red layer
           dst[1] = 0b00000000;
           dst[2] = 0b00010011;
           dst[3] = 0b00000010;
@@ -39,7 +40,7 @@ class CBirdGame : public CGame
           dst[6] = 0b00000000;
           dst[7] = 0b00000000;
           
-          dst[8] =  0b00111000;          
+          dst[8] =  0b00111000; // green layer
           dst[9] =  0b01111100;
           dst[10] = 0b01101111;
           dst[11] = 0b11111110;
@@ -92,6 +93,7 @@ class CBirdGame : public CGame
       }
     }
 
+    // Set up the next wall
     void nextWall(int space)
     {
       distanceToNextWall = space;
@@ -99,23 +101,31 @@ class CBirdGame : public CGame
       nextGapMax = nextGapMin + gapSize - 1;
     }
     
+    //////////////////////////////////////////////
+    // Make the game harder!
     void advanceLevel()
     {
       gameLevel++;
       if(!((20+gameLevel)%25) && gapSize>2)
-        --gapSize;
+        --gapSize;  // shrinking gap in the wall
+        
       if(!(gameLevel%9) && gapBetweenWalls>5)
-        --gapBetweenWalls;
+        --gapBetweenWalls; // walls getting closer together
+        
       if(gameLevel > 20)
-        closeBottom = 1;
+        closeBottom = 1; // closing in the ground
+        
       if(gameLevel > 30)
-        closeTop = 1; 
-      if(Timer2Period > 50)
-       Timer2Period --;
+        closeTop = 1;   // closing in the sky
+        
+      if(Timer2Period > 50)      
+       Timer2Period --;  // getting faster
       if(Timer1Period > 50)
        Timer1Period --;
     }
     
+    //////////////////////////////////////////////
+    // Start the game
     void init()
     {
       memset(walls,0,8);
@@ -129,28 +139,27 @@ class CBirdGame : public CGame
       advanceLevel();
       height = 3;
       velocity = 0;
-      wingToggle = 1;
       nextWall(10);
     }
         
-    
+    //////////////////////////////////////////////
+    // Running the game    
     void handleEvent(char event)
     {
       int i;
       switch(event)
       {
-        case EV_PRESS_A:
+        // Pressing any button
+        case EV_PRESS_A:  
         case EV_PRESS_B:
         case EV_PRESS_C:
         case EV_PRESS_D:
-          wingToggle = !wingToggle;
-          playSound(200+wingToggle * 200, 20);
           if(velocity > -0.5)
             velocity -= 0.1;
           break;
 
-            
-        case EV_TIMER_1: // gravity
+         // This timer makes the bird fall under gravity
+        case EV_TIMER_1: 
           height += velocity;
           if(height < 0)
           {
@@ -168,7 +177,9 @@ class CBirdGame : public CGame
             velocity += 0.05;
           }
           break;        
-        case EV_TIMER_2: // forward movement
+          
+          // This timer controls forward motion - making walls move closer
+        case EV_TIMER_2: 
           {
             byte wall = 0;
             byte score = 0;
@@ -195,20 +206,22 @@ class CBirdGame : public CGame
               gameScore++;
               if(!(gameScore % 10))
               {
-                playSound(400, 200);            
+                playSound(400, 50);            
                 delay(50);
-                playSound(800, 200);            
+                playSound(800, 50);            
                 delay(50);
-                playSound(400, 200);            
+                playSound(400, 50);            
                 delay(50);
-                playSound(800, 200);            
+                playSound(800, 50);            
                 delay(50);
                 advanceLevel();
               }
               else
               {
-                playSound(800, 200);            
+                playSound(400, 10);            
                 delay(10);
+                playSound(800, 10);            
+                
               }
             }
             else
@@ -219,12 +232,18 @@ class CBirdGame : public CGame
           }
           break;          
       }
+      
+      // clear screen except for wall
       memcpy(Disp8x8.red,walls,8);
       memset(Disp8x8.green,0,8);
       
+      //  collision detection with the walls
       if(Disp8x8.get(1, height))
       {
+        // hit the wall!
         Disp8x8.set(1, height, DISP_YELLOW);
+        
+        // death sound
         for(i=600; i>100; i-=50)
         {
           playSound(i, 50);
@@ -234,7 +253,11 @@ class CBirdGame : public CGame
         }
         endGame();
       }
+      
+      // Show the bird position
       Disp8x8.set(1, height, DISP_GREEN);
     }      
 };
+
+// Register the game in the menu
 CGameFactoryImpl<CBirdGame> BirdGame;
