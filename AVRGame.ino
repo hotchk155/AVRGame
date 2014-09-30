@@ -21,7 +21,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 #include <Arduino.h>
-#include <Tone.h>
+//#include <Tone.h>
 #include <EEPROM.h>
 
 #include "AVRGame.h"
@@ -47,7 +47,7 @@ Disp8x8Class Disp8x8;
 CGameFactory *gameFactory[MAX_GAMES] = {0};
 byte numGameFactories = 0;
 CGame *pGame = NULL;
-Tone speaker;
+//Tone speaker;
 byte soundOn = 0;
 char thisGame = -1;
 char nextGame = -1;
@@ -122,7 +122,7 @@ void setNextGame(int which)
 // enabled by the user
 void initSound()
 {
-   speaker.begin(P_SPK);
+//   speaker.begin(P_SPK);
    soundOn = EEPROM.read(EEPROM_SOUNDON);
 }
 
@@ -133,7 +133,7 @@ void initSound()
 inline void playSound(int pitch, int dur)
 {
   if(soundOn)
-    speaker.play(pitch,dur);
+    tone(P_SPK,pitch,dur);
 }
 
 ///////////////////////////////////////////////////////////////////////////
